@@ -32,13 +32,13 @@ async def async_setup_entry(
 ) -> None:
     """Set up PočasíMeteo weather entity."""
     coordinator = hass.data[DOMAIN][entry.entry_id]
-    
+
     # Vytvoř weather entity pro všechny modely
     # Primární entita bude ta podle výběru uživatele (nebo MASTER jako fallback)
     primary_model = entry.data.get(CONF_MODEL, "MASTER")
-    
+
     entities = []
-    
+
     # Nejdřív vytvoř primární entitu (bez suffixu v názvu)
     entities.append(
         PocasimeteoWeather(
@@ -48,7 +48,7 @@ async def async_setup_entry(
             is_primary=True
         )
     )
-    
+
     # Pak vytvoř entity pro všechny ostatní modely
     for model in WEATHER_MODELS.keys():
         if model != primary_model:
@@ -60,7 +60,7 @@ async def async_setup_entry(
                     is_primary=False
                 )
             )
-    
+
     async_add_entities(entities)
 
 
@@ -83,14 +83,14 @@ class PocasimeteoWeather(CoordinatorEntity, WeatherEntity):
     ) -> None:
         """Initialize the weather entity."""
         super().__init__(coordinator)
-        
+
         self._model = model
         self._station = entry.data["station"]
         self._is_primary = is_primary
-        
+
         # Nastavení unique_id a entity_id
         station_clean = self._station.replace("-", "_")
-        
+
         if is_primary:
             # Primární entita bez suffixu
             self._attr_unique_id = f"pocasimeteo_{station_clean}"
@@ -187,16 +187,16 @@ class PocasimeteoWeather(CoordinatorEntity, WeatherEntity):
         """Return the hourly forecast."""
         if not self.coordinator.data:
             return None
-            
+
         model_data = self.coordinator.data.get("models", {}).get(self._model, {})
         hourly_data = model_data.get("data", [])
-        
+
         forecasts = []
         for item in hourly_data[:48]:  # 48 hodin dopředu
             try:
                 dt = datetime.strptime(item["Dat"], "%m/%d/%y %H:%M:%S")
                 icon_code = item.get("Ik", "").split(".")[0][:2]
-                
+
                 forecast = {
                     ATTR_FORECAST_TIME: dt.isoformat(),
                     ATTR_FORECAST_TEMP: item.get("Te"),
@@ -209,23 +209,23 @@ class PocasimeteoWeather(CoordinatorEntity, WeatherEntity):
             except (KeyError, ValueError) as err:
                 _LOGGER.warning("Error parsing forecast data: %s", err)
                 continue
-                
+
         return forecasts
 
     async def async_forecast_daily(self) -> list[Forecast] | None:
         """Return the daily forecast."""
         if not self.coordinator.data:
             return None
-            
+
         model_data = self.coordinator.data.get("models", {}).get(self._model, {})
         daily_data = model_data.get("data_dne", [])
-        
+
         forecasts = []
         for item in daily_data[:7]:  # 7 dní dopředu
             try:
                 dt = datetime.strptime(item["Dat_dne"], "%m/%d/%y %H:%M:%S")
                 icon_code = item.get("IkD", "").split(".")[0][:2]
-                
+
                 forecast = {
                     ATTR_FORECAST_TIME: dt.isoformat(),
                     ATTR_FORECAST_TEMP: item.get("Tmax"),  # Maximální teplota
@@ -237,7 +237,7 @@ class PocasimeteoWeather(CoordinatorEntity, WeatherEntity):
             except (KeyError, ValueError) as err:
                 _LOGGER.warning("Error parsing daily forecast: %s", err)
                 continue
-                
+
         return forecasts
 
     @property
@@ -269,5 +269,61 @@ class PocasimeteoWeather(CoordinatorEntity, WeatherEntity):
 
         if data_age_minutes is not None:
             attributes["data_age_minutes"] = data_age_minutes
+
+        # Přidej hodinovou předpověď
+        hourly_data = model_data.get("data", [])
+        if hourly_data:
+            forecast_hourly = []
+            for item in hourly_data[:48]:  # 48 hodin dopředu
+                try:
+                    dt = datetime.strptime(item["Dat"], "%m/%d/%y %H:%M:%S")
+                    api_icon_code = item.get("Ik", "").split(".")[0][:2] if item.get("Ik") else ""
+
+                    # Mapuj na PNG filename - fallback na "a04" pokud není znám
+                    icon_filename = ICON_CODE_MAP.get(api_icon_code, "a04")
+
+                    forecast = {
+                        "datetime": dt.isoformat(),
+                        "temperature": item.get("Te"),
+                        "precipitation": item.get("S", 0),
+                        "wind_speed": item.get("V"),
+                        "wind_gust": item.get("VN"),
+                        "wind_bearing": item.get("VSS"),
+                        "condition": CONDITION_MAP.get(api_icon_code, "unknown"),
+                        "icon_code": icon_filename,
+                    }
+                    forecast_hourly.append(forecast)
+                except (KeyError, ValueError):
+                    continue
+
+            if forecast_hourly:
+                attributes["forecast_hourly"] = forecast_hourly
+
+        # Přidej denní předpověď
+        daily_data = model_data.get("data_dne", [])
+        if daily_data:
+            forecast_daily = []
+            for item in daily_data[:7]:  # 7 dní dopředu
+                try:
+                    dt = datetime.strptime(item["Dat_dne"], "%m/%d/%y %H:%M:%S")
+                    api_icon_code = item.get("IkD", "").split(".")[0][:2] if item.get("IkD") else ""
+
+                    # Mapuj na PNG filename - fallback na "a04" pokud není znám
+                    icon_filename = ICON_CODE_MAP.get(api_icon_code, "a04")
+
+                    forecast = {
+                        "datetime": dt.isoformat(),
+                        "temperature": item.get("Tmax"),  # Maximální teplota
+                        "templow": item.get("Tmin"),  # Minimální teplota
+                        "precipitation": item.get("S_den", 0),
+                        "condition": CONDITION_MAP.get(api_icon_code, "unknown"),
+                        "icon_code": icon_filename,
+                    }
+                    forecast_daily.append(forecast)
+                except (KeyError, ValueError):
+                    continue
+
+            if forecast_daily:
+                attributes["forecast_daily"] = forecast_daily
 
         return attributes

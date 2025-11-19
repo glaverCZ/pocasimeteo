@@ -1,433 +1,772 @@
-/*! PočasíMeteo Weather Card */
+/*! PočasíMeteo Weather Card - HA 2024.1+ Compatible */
 
-class PocasimeteoCard extends HTMLElement {
-  constructor() {
-    super();
-    this.attachShadow({ mode: 'open' });
-    this._selectedModel = 'MASTER';
-    console.log('🎨 PocasimeteoCard constructor called');
-  }
-
-  setConfig(config) {
-    if (!config.entity) {
-      throw new Error('Please define an entity for pocasimeteo-card');
-    }
-    this.config = config;
-    this._selectedModel = config.default_model || 'MASTER';
-    console.log('🎨 Config set:', this.config);
-  }
-
-  set hass(hass) {
-    this._hass = hass;
-
-    if (!this.shadowRoot.hasChildNodes()) {
-      this.render();
+(() => {
+  class PocasimeteoCard extends HTMLElement {
+    constructor() {
+      super();
+      this.attachShadow({ mode: 'open' });
+      this._selectedEntityId = null;
+      this._availableModels = [];
+      this._currentEntity = null;
     }
 
-    this.updateContent();
-  }
+    setConfig(config) {
+      if (!config.entity) throw new Error('entity je povinná');
+      this.config = config;
+      this._selectedEntityId = config.entity;
 
-  render() {
-    const card = document.createElement('ha-card');
+      // Konfigurovaná seznam modelů k porovnání
+      this._modelConfigs = config.models || [
+        { name: 'MASTER', label: 'MASTER' },
+        { name: 'ALADIN', label: 'ALADIN' },
+        { name: 'ICON', label: 'ICON' },
+        { name: 'GFS', label: 'GFS' },
+        { name: 'ECMWF', label: 'ECMWF' },
+        { name: 'WRF', label: 'WRF' },
+        { name: 'COSMO', label: 'COSMO' },
+        { name: 'ARPEGE', label: 'ARPEGE' }
+      ];
 
-    const style = document.createElement('style');
-    style.textContent = `
-      * { box-sizing: border-box; }
+      // Entita pro automatickou detekci modelu
+      this._temperatureEntity = config.temperature_entity;
+    }
 
-      ha-card {
-        overflow: hidden;
+    set hass(hass) {
+      this._hass = hass;
+
+      // První render
+      if (!this.shadowRoot.hasChildNodes()) {
+        this._buildAvailableModels();
+        this._render();
       }
 
-      .card-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 16px;
-        border-bottom: 1px solid var(--divider-color);
-        background: var(--secondary-background-color);
-      }
+      this._updateContent();
+    }
 
-      .header-left h2 {
-        margin: 0;
-        font-size: 20px;
-      }
+    _buildAvailableModels() {
+      if (!this._hass || !this.config) return;
 
-      .model-selector {
-        background: var(--primary-background-color);
-        border: 2px solid var(--primary-color);
-        border-radius: 8px;
-        padding: 8px 12px;
-        font-size: 14px;
-        cursor: pointer;
-        color: var(--primary-text-color);
-      }
+      const entity = this._hass.states[this.config.entity];
+      if (!entity) return;
 
-      .current-weather {
-        display: flex;
-        align-items: center;
-        justify-content: space-around;
-        padding: 24px 16px;
-        background: linear-gradient(135deg, var(--primary-color) 0%, rgba(33, 150, 243, 0.8) 100%);
-        color: white;
-      }
+      // Zj isti stanici z entity_id (weather.pocasimeteo_STATION_MODEL)
+      const entityId = this.config.entity;
+      const models = [];
 
-      .weather-icon {
-        font-size: 80px;
-        min-width: 100px;
-        text-align: center;
-      }
+      // Extrahuj stanici z primární entity
+      const match = entityId.match(/pocasimeteo_([a-z0-9_]+?)(?:_[a-z]+)?$/);
+      if (!match) return;
 
-      .weather-icon img {
-        width: 80px;
-        height: 80px;
-        object-fit: contain;
-      }
+      const station = match[1]; // praha_6_ruzyne nebo brno, atd.
+      const prefix = `weather.pocasimeteo_${station}`;
 
-      .weather-main {
-        flex: 1;
-      }
+      // Zkus najít entity pro každý model
+      this._modelConfigs.forEach(modelConfig => {
+        const modelLower = modelConfig.name.toLowerCase();
+        let entityIdToCheck = prefix;
 
-      .temperature {
-        font-size: 56px;
-        font-weight: 300;
-        line-height: 1;
-        margin: 0;
-      }
+        // Primární entita (bez suffixu) je primární model
+        if (modelConfig.name === 'MASTER') {
+          entityIdToCheck = prefix;
+        } else {
+          entityIdToCheck = `${prefix}_${modelLower}`;
+        }
 
-      .condition {
-        font-size: 18px;
-        opacity: 0.9;
-      }
+        // Zkontroluj, zda entita existuje
+        if (this._hass.states[entityIdToCheck]) {
+          models.push({
+            name: modelConfig.name,
+            label: modelConfig.label,
+            entityId: entityIdToCheck
+          });
+        }
+      });
 
-      .details-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 1px;
-        background: var(--divider-color);
-      }
+      this._availableModels = models;
+    }
 
-      .detail-item {
-        background: var(--primary-background-color);
-        padding: 12px;
-        text-align: center;
-      }
+    _autoSelectBestModel() {
+      if (!this._temperatureEntity || !this._hass) return;
 
-      .detail-label {
-        font-size: 12px;
-        opacity: 0.6;
-        margin-bottom: 4px;
-      }
+      const tempEntity = this._hass.states[this._temperatureEntity];
+      if (!tempEntity) return;
 
-      .detail-value {
-        font-size: 18px;
-        font-weight: 500;
-      }
+      const refTemp = tempEntity.state;
+      if (refTemp === undefined || refTemp === 'unknown') return;
 
-      .stale-warning {
-        background: #fff3cd;
-        color: #856404;
-        padding: 12px 16px;
-        text-align: center;
-        font-weight: 500;
-        border-bottom: 1px solid #ffc107;
-      }
+      const referenceTemperature = parseFloat(refTemp);
+      if (isNaN(referenceTemperature)) return;
 
-      .forecast-section {
-        padding: 16px;
-      }
+      // Porovnej s aktuálníteplotami všech dostupných modelů
+      let bestModel = null;
+      let bestDiff = Infinity;
 
-      .forecast-title {
-        font-weight: 500;
-        margin-bottom: 12px;
-        color: var(--primary-text-color);
-      }
+      this._availableModels.forEach(model => {
+        const modelEntity = this._hass.states[model.entityId];
+        if (!modelEntity) return;
 
-      .hourly-forecast {
-        display: flex;
-        gap: 8px;
-        overflow-x: auto;
-        padding-bottom: 8px;
-      }
+        const modelTemp = modelEntity.attributes?.temperature;
+        if (modelTemp === undefined) return;
 
-      .forecast-item {
-        flex-shrink: 0;
-        min-width: 60px;
-        text-align: center;
-        padding: 8px;
-        background: var(--secondary-background-color);
-        border-radius: 8px;
-      }
+        const diff = Math.abs(modelTemp - referenceTemperature);
+        if (diff < bestDiff) {
+          bestDiff = diff;
+          bestModel = model;
+        }
+      });
 
-      .forecast-time {
-        font-size: 12px;
-        opacity: 0.6;
-      }
+      // Pokud jsme našli nejbližší model a není to aktuálně vybraný, vyber ho
+      if (bestModel && bestModel.entityId !== this._selectedEntityId) {
+        this._selectedEntityId = bestModel.entityId;
 
-      .forecast-icon {
-        font-size: 32px;
-        margin: 4px 0;
-      }
+        // Aktualizuj aktivní tab
+        const tabs = this.shadowRoot?.querySelectorAll('.model-tab');
+        if (tabs) {
+          tabs.forEach(tab => tab.classList.remove('active'));
+        }
 
-      .forecast-icon img {
-        width: 40px;
-        height: 40px;
-        object-fit: contain;
+        // Najdi a označ aktivní tab
+        if (this._availableModels.indexOf(bestModel) >= 0) {
+          const tabIndex = this._availableModels.indexOf(bestModel);
+          const tabs = this.shadowRoot?.querySelectorAll('.model-tab');
+          if (tabs && tabs[tabIndex]) {
+            tabs[tabIndex].classList.add('active');
+          }
+        }
       }
+    }
 
-      .forecast-temp {
-        font-size: 14px;
-        font-weight: 500;
-      }
+    _render() {
+      const style = document.createElement('style');
+      style.textContent = `
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
-      .daily-forecast {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-      }
+        ha-card {
+          overflow: hidden;
+          --ha-card-border-radius: 12px;
+        }
 
-      .daily-item {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 12px;
-        background: var(--secondary-background-color);
-        border-radius: 8px;
-      }
+        .card-container {
+          background: var(--primary-background-color);
+          color: var(--primary-text-color);
+        }
 
-      .daily-day {
-        flex: 1;
-        font-weight: 500;
-      }
+        /* Header - Model Selector */
+        .card-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 12px 16px;
+          border-bottom: 1px solid var(--divider-color);
+          background: linear-gradient(90deg, rgba(33, 150, 243, 0.05) 0%, rgba(33, 150, 243, 0) 100%);
+          gap: 12px;
+        }
 
-      .daily-temps {
-        display: flex;
-        gap: 16px;
-        align-items: center;
-      }
+        .card-title {
+          font-size: 16px;
+          font-weight: 700;
+          letter-spacing: -0.3px;
+          flex-shrink: 0;
+        }
 
-      .no-data {
-        text-align: center;
-        padding: 20px;
-        color: var(--secondary-text-color);
-      }
-    `;
+        .model-tabs {
+          display: flex;
+          gap: 4px;
+          flex-wrap: wrap;
+          overflow-x: auto;
+          flex: 1;
+        }
 
-    const content = document.createElement('div');
-    content.innerHTML = `
-      <div class="card-header">
-        <div class="header-left">
-          <h2>PočasíMeteo</h2>
+        .model-tabs::-webkit-scrollbar {
+          height: 3px;
+        }
+
+        .model-tabs::-webkit-scrollbar-thumb {
+          background: rgba(0, 0, 0, 0.2);
+          border-radius: 2px;
+        }
+
+        .model-tab {
+          padding: 5px 10px;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(33, 150, 243, 0.3);
+          border-radius: 5px;
+          cursor: pointer;
+          font-size: 11px;
+          font-weight: 500;
+          transition: all 0.2s ease;
+          color: var(--secondary-text-color);
+          white-space: nowrap;
+          flex-shrink: 0;
+        }
+
+        .model-tab:hover {
+          background: rgba(33, 150, 243, 0.15);
+          border-color: var(--primary-color);
+        }
+
+        .model-tab.active {
+          background: var(--primary-color);
+          color: white;
+          border-color: var(--primary-color);
+        }
+
+        .model-precision {
+          font-size: 10px;
+          opacity: 0.8;
+          margin-top: 1px;
+        }
+
+        /* Stale warning */
+        .stale-warning {
+          background: #fff3cd;
+          color: #856404;
+          padding: 12px 16px;
+          text-align: center;
+          font-weight: 500;
+          font-size: 13px;
+          border-bottom: 1px solid rgba(133, 100, 4, 0.2);
+        }
+
+        /* Current Weather - Compact */
+        .current-section {
+          padding: 14px 16px;
+          background: linear-gradient(135deg, rgba(33, 150, 243, 0.08) 0%, rgba(33, 150, 243, 0.03) 100%);
+          border-bottom: 1px solid var(--divider-color);
+        }
+
+        .current-weather {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .weather-icon {
+          font-size: 56px;
+          min-width: 56px;
+          text-align: center;
+        }
+
+        .weather-icon img {
+          width: 56px;
+          height: 56px;
+          object-fit: contain;
+        }
+
+        .weather-main {
+          flex: 1;
+        }
+
+        .temperature {
+          font-size: 38px;
+          font-weight: 300;
+          line-height: 1;
+          margin-bottom: 2px;
+        }
+
+        .condition {
+          font-size: 13px;
+          opacity: 0.8;
+          margin-bottom: 1px;
+        }
+
+        .data-age {
+          font-size: 11px;
+          opacity: 0.6;
+        }
+
+        /* Details Grid */
+        .details-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 1px;
+          background: var(--divider-color);
+          margin: 0;
+        }
+
+        .detail-item {
+          background: var(--primary-background-color);
+          padding: 10px 12px;
+          text-align: center;
+        }
+
+        .detail-label {
+          font-size: 10px;
+          opacity: 0.6;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          margin-bottom: 3px;
+        }
+
+        .detail-value {
+          font-size: 15px;
+          font-weight: 500;
+        }
+
+        /* Forecast Sections */
+        .forecast-section {
+          padding: 12px 16px;
+          border-bottom: 1px solid var(--divider-color);
+        }
+
+        .forecast-title {
+          font-weight: 600;
+          font-size: 12px;
+          margin-bottom: 10px;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          opacity: 0.8;
+        }
+
+        /* Hourly Forecast */
+        .hourly-forecast {
+          display: flex;
+          gap: 5px;
+          overflow-x: auto;
+          padding-bottom: 6px;
+        }
+
+        .hourly-forecast::-webkit-scrollbar {
+          height: 3px;
+        }
+
+        .hourly-forecast::-webkit-scrollbar-track {
+          background: transparent;
+        }
+
+        .hourly-forecast::-webkit-scrollbar-thumb {
+          background: rgba(0, 0, 0, 0.2);
+          border-radius: 2px;
+        }
+
+        .forecast-item {
+          flex-shrink: 0;
+          min-width: 56px;
+          padding: 7px;
+          background: var(--secondary-background-color);
+          border-radius: 5px;
+          text-align: center;
+          font-size: 11px;
+          display: flex;
+          flex-direction: column;
+          gap: 3px;
+        }
+
+        .forecast-item-time {
+          font-weight: 500;
+          font-size: 10px;
+          opacity: 0.8;
+        }
+
+        .forecast-item-icon {
+          font-size: 24px;
+          flex-shrink: 0;
+        }
+
+        .forecast-item-icon img {
+          width: 24px;
+          height: 24px;
+          object-fit: contain;
+        }
+
+        .forecast-item-temp {
+          font-weight: 600;
+          font-size: 12px;
+        }
+
+        .forecast-item-wind {
+          font-size: 10px;
+          opacity: 0.8;
+        }
+
+        .forecast-item-rain {
+          font-size: 10px;
+          opacity: 0.8;
+          color: rgba(33, 150, 243, 0.8);
+        }
+
+        /* Daily Forecast */
+        .daily-forecast {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+
+        .daily-item {
+          display: grid;
+          grid-template-columns: 60px 28px 1fr auto;
+          align-items: center;
+          gap: 10px;
+          padding: 10px 12px;
+          background: var(--secondary-background-color);
+          border-radius: 5px;
+          font-size: 12px;
+        }
+
+        .daily-day {
+          font-weight: 500;
+          font-size: 12px;
+        }
+
+        .daily-icon {
+          font-size: 22px;
+        }
+
+        .daily-icon img {
+          width: 22px;
+          height: 22px;
+          object-fit: contain;
+        }
+
+        .daily-temps {
+          text-align: left;
+          font-weight: 500;
+          font-size: 12px;
+        }
+
+        .daily-temp-max {
+          color: var(--primary-color);
+        }
+
+        .daily-temp-min {
+          opacity: 0.6;
+          font-size: 11px;
+        }
+
+        .daily-rain {
+          min-width: 50px;
+          text-align: right;
+          font-size: 11px;
+          color: rgba(33, 150, 243, 0.8);
+        }
+
+        .rain-icon {
+          display: inline-block;
+          margin-right: 2px;
+        }
+      `;
+
+      const card = document.createElement('ha-card');
+
+      const content = document.createElement('div');
+      content.className = 'card-container';
+
+      // Header s model selectorem
+      const header = document.createElement('div');
+      header.className = 'card-header';
+
+      const title = document.createElement('div');
+      title.className = 'card-title';
+      title.textContent = 'PočasíMeteo';
+      header.appendChild(title);
+
+      const tabs = document.createElement('div');
+      tabs.className = 'model-tabs';
+      tabs.id = 'modelTabs';
+      header.appendChild(tabs);
+
+      content.appendChild(header);
+
+      // Stale warning
+      const warning = document.createElement('div');
+      warning.id = 'staleWarning';
+      warning.className = 'stale-warning';
+      warning.style.display = 'none';
+      warning.textContent = '⚠️ Data jsou zastaralá (>90 minut)';
+      content.appendChild(warning);
+
+      // Current weather
+      const current = document.createElement('div');
+      current.className = 'current-section';
+      current.innerHTML = `
+        <div class="current-weather">
+          <div class="weather-icon" id="icon">🌡️</div>
+          <div class="weather-main">
+            <div class="temperature"><span id="temp">--</span>°C</div>
+            <div class="condition" id="cond">--</div>
+            <div class="data-age" id="dataAge"></div>
+          </div>
         </div>
-        <select class="model-selector" id="modelSelect">
-          <option value="MASTER">Master</option>
-          <option value="ALADIN">ALADIN</option>
-          <option value="ICON">ICON</option>
-          <option value="GFS">GFS</option>
-          <option value="ECMWF">ECMWF</option>
-          <option value="WRF">WRF</option>
-          <option value="COSMO">COSMO</option>
-          <option value="ARPEGE">ARPEGE</option>
-        </select>
-      </div>
-      <div id="staleWarning" class="stale-warning" style="display:none;">
-        ⚠️ Data jsou zastaralá
-      </div>
-      <div class="current-weather">
-        <div class="weather-icon" id="currentIcon">☀️</div>
-        <div class="weather-main">
-          <div class="temperature"><span id="temp">--</span>°C</div>
-          <div class="condition" id="condition">--</div>
-        </div>
-      </div>
-      <div class="details-grid">
+      `;
+      content.appendChild(current);
+
+      // Details grid
+      const details = document.createElement('div');
+      details.className = 'details-grid';
+      details.innerHTML = `
         <div class="detail-item">
           <div class="detail-label">Vlhkost</div>
-          <div class="detail-value"><span id="humidity">--</span>%</div>
+          <div class="detail-value"><span id="hum">--</span>%</div>
         </div>
         <div class="detail-item">
           <div class="detail-label">Tlak</div>
-          <div class="detail-value"><span id="pressure">--</span> hPa</div>
+          <div class="detail-value"><span id="pres">--</span> hPa</div>
         </div>
         <div class="detail-item">
           <div class="detail-label">Vítr</div>
           <div class="detail-value"><span id="wind">--</span> m/s</div>
         </div>
-      </div>
-      <div class="forecast-section">
-        <div class="forecast-title">Hodinová předpověď (24h)</div>
-        <div class="hourly-forecast" id="hourlyForecast">
-          <div class="no-data">Načítání...</div>
-        </div>
-      </div>
-      <div class="forecast-section">
-        <div class="forecast-title">Denní předpověď (7d)</div>
-        <div class="daily-forecast" id="dailyForecast">
-          <div class="no-data">Načítání...</div>
-        </div>
-      </div>
-    `;
+      `;
+      content.appendChild(details);
 
-    card.appendChild(style);
-    card.appendChild(content);
-    this.shadowRoot.appendChild(card);
+      // Hourly forecast
+      const hourlySection = document.createElement('div');
+      hourlySection.className = 'forecast-section';
+      hourlySection.innerHTML = `
+        <div class="forecast-title">Hodinová Předpověď (48h)</div>
+        <div class="hourly-forecast" id="hourly"></div>
+      `;
+      content.appendChild(hourlySection);
 
-    this.shadowRoot.querySelector('#modelSelect').addEventListener('change', (e) => {
-      this._selectedModel = e.target.value;
-      this.updateContent();
-    });
+      // Daily forecast
+      const dailySection = document.createElement('div');
+      dailySection.className = 'forecast-section';
+      dailySection.innerHTML = `
+        <div class="forecast-title">Denní Předpověď (7 dní)</div>
+        <div class="daily-forecast" id="daily"></div>
+      `;
+      content.appendChild(dailySection);
 
-    console.log('🎨 Card rendered');
-  }
+      card.appendChild(style);
+      card.appendChild(content);
+      this.shadowRoot.appendChild(card);
 
-  updateContent() {
-    const entity = this._hass.states[this.config.entity];
-    if (!entity) {
-      console.warn('🎨 Entity not found:', this.config.entity);
-      return;
+      // Setup model tabs
+      this._setupModelTabs();
     }
 
-    const state = entity.state;
-    const attrs = entity.attributes;
+    _setupModelTabs() {
+      const tabsContainer = this.shadowRoot.querySelector('#modelTabs');
+      if (!tabsContainer || !this._availableModels.length) return;
 
-    console.log('🎨 Updating with entity:', this.config.entity, 'State:', state, 'Attrs:', attrs);
+      this._availableModels.forEach(model => {
+        const tab = document.createElement('div');
+        tab.className = 'model-tab';
+        if (this._selectedEntityId === model.entityId) {
+          tab.classList.add('active');
+        }
 
-    // Aktuální počasí
-    const tempEl = this.shadowRoot.querySelector('#temp');
-    const conditionEl = this.shadowRoot.querySelector('#condition');
-    const humidityEl = this.shadowRoot.querySelector('#humidity');
-    const pressureEl = this.shadowRoot.querySelector('#pressure');
-    const windEl = this.shadowRoot.querySelector('#wind');
-    const iconEl = this.shadowRoot.querySelector('#currentIcon');
-    const staleWarning = this.shadowRoot.querySelector('#staleWarning');
+        tab.innerHTML = `
+          <div>${model.label}</div>
+          <div class="model-precision" id="precision-${model.name}"></div>
+        `;
 
-    if (tempEl) tempEl.textContent = attrs.temperature ?? '--';
-    if (conditionEl) conditionEl.textContent = this.translateCondition(attrs.condition) ?? '--';
-    if (humidityEl) humidityEl.textContent = attrs.humidity ?? '--';
-    if (pressureEl) pressureEl.textContent = attrs.pressure ?? '--';
-    if (windEl) windEl.textContent = (attrs.wind_speed ?? '--');
+        tab.addEventListener('click', () => {
+          this._selectedEntityId = model.entityId;
 
-    // Ikona
-    if (attrs.icon_code) {
+          // Update active tab
+          this.shadowRoot.querySelectorAll('.model-tab').forEach(t => {
+            t.classList.remove('active');
+          });
+          tab.classList.add('active');
+
+          this._updateContent();
+        });
+
+        tabsContainer.appendChild(tab);
+      });
+    }
+
+    _updateContent() {
+      if (!this._hass || !this._selectedEntityId) return;
+
+      // Pokud je nastavena temperature_entity, zkus najít nejbližší model
+      if (this._temperatureEntity && this._availableModels.length > 0) {
+        this._autoSelectBestModel();
+      }
+
+      const entity = this._hass.states[this._selectedEntityId];
+      if (!entity) return;
+
+      const a = entity.attributes || {};
+      const sr = this.shadowRoot;
+
+      // Current weather
+      sr.querySelector('#temp').textContent = a.temperature !== undefined ? Math.round(a.temperature) : '--';
+      sr.querySelector('#cond').textContent = a.condition || '--';
+      sr.querySelector('#hum').textContent = a.humidity !== undefined ? a.humidity : '--';
+      sr.querySelector('#pres').textContent = a.pressure !== undefined ? a.pressure : '--';
+      sr.querySelector('#wind').textContent = a.wind_speed !== undefined ? a.wind_speed.toFixed(1) : '--';
+
+      // Data age
+      if (a.data_age_minutes !== undefined) {
+        sr.querySelector('#dataAge').textContent = `Data je ${a.data_age_minutes} minut stará`;
+      }
+
+      // Stale warning
+      sr.querySelector('#staleWarning').style.display = a.data_stale ? 'block' : 'none';
+
+      // Icon - PNG z JSON
+      const iconEl = sr.querySelector('#icon');
+      if (a.icon_code) {
+        const img = document.createElement('img');
+        img.src = `/local/icons/${a.icon_code}.png`;
+        img.onerror = () => {
+          iconEl.textContent = '❓';
+        };
+        iconEl.innerHTML = '';
+        iconEl.appendChild(img);
+      }
+
+      // Update precision info
+      this._availableModels.forEach(model => {
+        const precisionEl = sr.querySelector(`#precision-${model.name}`);
+        if (precisionEl) {
+          const modelEntity = this._hass.states[model.entityId];
+          if (modelEntity && modelEntity.attributes.data_age_minutes !== undefined) {
+            precisionEl.textContent = `${modelEntity.attributes.data_age_minutes}m`;
+          }
+        }
+      });
+
+      // Hourly forecast
+      const hourly = sr.querySelector('#hourly');
+      if (a.forecast_hourly && Array.isArray(a.forecast_hourly)) {
+        hourly.innerHTML = '';
+        a.forecast_hourly.slice(0, 24).forEach((f, idx) => {
+          const div = document.createElement('div');
+          div.className = 'forecast-item';
+
+          const dt = new Date(f.datetime || f.forecast_time);
+          const time = dt.toLocaleTimeString('cs-CZ', { hour: '2-digit' });
+          const temp = f.temperature ? Math.round(f.temperature) : '--';
+          const wind = this._formatWindInfo(f.wind_speed, f.wind_gust);
+          const rain = f.precipitation !== undefined ? f.precipitation : 0;
+          const rainDisplay = rain > 0 ? `${rain}mm` : '--';
+
+          div.innerHTML = `
+            <div class="forecast-item-time">${time}</div>
+            <div class="forecast-item-icon" id="hourly-icon-${idx}">📌</div>
+            <div class="forecast-item-temp">${temp}°</div>
+            <div class="forecast-item-wind">${wind} m/s</div>
+            <div class="forecast-item-rain">${rainDisplay}</div>
+          `;
+
+          hourly.appendChild(div);
+
+          // Load icon - předej icon_code z předpovědi
+          this._loadForecastIcon(div.querySelector(`#hourly-icon-${idx}`), f.icon_code, f.condition || 'unknown');
+        });
+      }
+
+      // Daily forecast
+      const daily = sr.querySelector('#daily');
+      if (a.forecast_daily && Array.isArray(a.forecast_daily)) {
+        daily.innerHTML = '';
+        a.forecast_daily.slice(0, 7).forEach((f, idx) => {
+          const div = document.createElement('div');
+          div.className = 'daily-item';
+
+          const dt = new Date(f.datetime || f.forecast_time);
+          const day = dt.toLocaleDateString('cs-CZ', { weekday: 'short' });
+          const max = f.temperature ? Math.round(f.temperature) : '--';
+          const min = f.templow ? Math.round(f.templow) : '--';
+          const rain = f.precipitation !== undefined ? f.precipitation : 0;
+          const rainIcon = this._getPrecipitationIcon(f.condition || 'rainy');
+          const rainDisplay = rain > 0 ? `${rainIcon} ${rain}mm` : `${rainIcon} -`;
+
+          div.innerHTML = `
+            <div class="daily-day">${day}</div>
+            <div class="daily-icon" id="daily-icon-${idx}">📌</div>
+            <div class="daily-temps">
+              <div><span class="daily-temp-max">${max}°</span></div>
+              <div><span class="daily-temp-min">${min}°</span></div>
+            </div>
+            <div class="daily-rain">${rainDisplay}</div>
+          `;
+
+          daily.appendChild(div);
+
+          // Load icon - předej icon_code z předpovědi
+          this._loadForecastIcon(div.querySelector(`#daily-icon-${idx}`), f.icon_code, f.condition || 'unknown');
+        });
+      }
+    }
+
+    _loadForecastIcon(iconEl, iconCode, condition) {
+      if (!iconEl) return;
+
+      // Preferuj icon_code, fallback na mapování condition
+      let finalIconCode = iconCode;
+
+      // Validuj icon_code - měl by začínat 'a' a obsahovat čísla
+      if (!finalIconCode || !this._isValidIconCode(finalIconCode)) {
+        // Fallback mapování podmínky na icon code
+        const conditionToIcon = {
+          'sunny': 'a01d',
+          'partlycloudy': 'a02d',
+          'cloudy': 'a03d',
+          'rainy': 'a10',
+          'snowy': 'a13',
+          'lightning-rainy': 'a11',
+          'fog': 'a50',
+          'unknown': 'a04'
+        };
+        finalIconCode = conditionToIcon[condition] || 'a04';
+      }
+
       const img = document.createElement('img');
-      img.src = `/local/icons/${attrs.icon_code}.png`;
-      img.alt = attrs.condition || 'weather';
+      img.src = `/local/icons/${finalIconCode}.png`;
       img.onerror = () => {
-        console.log('🎨 Icon not found:', attrs.icon_code);
-        iconEl.textContent = this.getWeatherEmoji(attrs.condition);
+        iconEl.textContent = '❓';
       };
+
       iconEl.innerHTML = '';
       iconEl.appendChild(img);
-    } else {
-      iconEl.textContent = this.getWeatherEmoji(attrs.condition);
     }
 
-    // Varovní banner
-    if (attrs.data_stale) {
-      staleWarning.style.display = 'block';
-    } else {
-      staleWarning.style.display = 'none';
+    _isValidIconCode(iconCode) {
+      // Icon code by měl být ve formátu: a01d, a10, a13 atd.
+      return typeof iconCode === 'string' && /^a\d+/.test(iconCode);
     }
 
-    // Hodinová předpověď
-    const hourlyForecast = this.shadowRoot.querySelector('#hourlyForecast');
-    if (attrs.forecast_hourly && Array.isArray(attrs.forecast_hourly)) {
-      hourlyForecast.innerHTML = '';
-      attrs.forecast_hourly.slice(0, 24).forEach(f => {
-        const item = document.createElement('div');
-        item.className = 'forecast-item';
-
-        const time = new Date(f.datetime || f.forecast_time).toLocaleTimeString('cs-CZ', { hour: '2-digit' });
-        const temp = Math.round(f.temperature || f.templow || 0);
-        const condition = f.condition || 'unknown';
-
-        item.innerHTML = `
-          <div class="forecast-time">${time}</div>
-          <div class="forecast-icon">${this.getWeatherEmoji(condition)}</div>
-          <div class="forecast-temp">${temp}°</div>
-        `;
-        hourlyForecast.appendChild(item);
-      });
+    _getPrecipitationIcon(condition) {
+      // Vrátí ikonu pro typ srážek na základě podmínky
+      if (condition === 'snowy' || condition === 'snow') {
+        return '❄️';
+      } else if (condition === 'rainy' || condition === 'lightning-rainy' || condition === 'rain') {
+        return '💧';
+      }
+      return '💧'; // Default
     }
 
-    // Denní předpověď
-    const dailyForecast = this.shadowRoot.querySelector('#dailyForecast');
-    if (attrs.forecast_daily && Array.isArray(attrs.forecast_daily)) {
-      dailyForecast.innerHTML = '';
-      attrs.forecast_daily.slice(0, 7).forEach(f => {
-        const item = document.createElement('div');
-        item.className = 'daily-item';
+    _formatWindInfo(windSpeed, windGust) {
+      if (windSpeed === undefined || windSpeed === null) return '--';
+      const speed = typeof windSpeed === 'number' ? windSpeed.toFixed(1) : windSpeed;
+      if (windGust !== undefined && windGust !== null) {
+        const gust = typeof windGust === 'number' ? windGust.toFixed(1) : windGust;
+        return `${speed}↗${gust}`;
+      }
+      return `${speed}`;
+    }
 
-        const date = new Date(f.datetime || f.forecast_time).toLocaleDateString('cs-CZ', { weekday: 'short' });
-        const tempMax = Math.round(f.temperature || 0);
-        const tempMin = Math.round(f.templow || 0);
+    static getStubConfig() {
+      return {
+        type: 'custom:pocasimeteo-card',
+        entity: 'weather.pocasimeteo_praha_6_ruzyne',
+        // Volitelné: seznam modelů k zobrazení
+        models: [
+          { name: 'MASTER', label: 'Master' },
+          { name: 'ALADIN', label: 'ALADIN' },
+          { name: 'ICON', label: 'ICON' },
+          { name: 'GFS', label: 'GFS' },
+          { name: 'ECMWF', label: 'ECMWF' }
+        ],
+        // Volitelné: entita teploty pro automatickou detekci modelu
+        // temperature_entity: 'sensor.outdoor_temperature'
+      };
+    }
 
-        item.innerHTML = `
-          <div class="daily-day">${date}</div>
-          <div style="flex: 0.5; text-align: center;">${this.getWeatherEmoji(f.condition)}</div>
-          <div class="daily-temps">
-            <span style="font-weight: 500;">${tempMax}°</span>
-            <span style="opacity: 0.6;">${tempMin}°</span>
-          </div>
-        `;
-        dailyForecast.appendChild(item);
-      });
+    getCardSize() {
+      return 10;
     }
   }
 
-  getWeatherEmoji(condition) {
-    const emojis = {
-      'sunny': '☀️',
-      'partlycloudy': '⛅',
-      'cloudy': '☁️',
-      'rainy': '🌧️',
-      'snowy': '❄️',
-      'fog': '🌫️',
-      'lightning-rainy': '⛈️',
-      'unknown': '🌡️'
-    };
-    return emojis[condition] || '🌡️';
-  }
-
-  translateCondition(condition) {
-    const translations = {
-      'sunny': 'Slunečno',
-      'partlycloudy': 'Polojasno',
-      'cloudy': 'Zataženo',
-      'rainy': 'Déšť',
-      'snowy': 'Sníh',
-      'fog': 'Mlha',
-      'lightning-rainy': 'Bouřka',
-    };
-    return translations[condition] || condition;
-  }
-
-  getConfig() {
-    return this.config;
-  }
-
-  getCardSize() {
-    return 8;
-  }
-
-  static getStubConfig() {
-    return {
-      entity: 'weather.pocasimeteo_praha_6_ruzyne',
-      default_model: 'MASTER'
-    };
-  }
-}
-
-// Registruj custom element
-customElements.define('pocasimeteo-card', PocasimeteoCard);
-console.log('🎨 PocasimeteoCard registered');
-
-// Registruj pro Lovelace
-window.customCards = window.customCards || [];
-window.customCards.push({
-  type: 'pocasimeteo-card',
-  name: 'PočasíMeteo Card',
-  description: 'Weather forecast card for PočasíMeteo integration',
-  preview: true,
-  documentationURL: 'https://github.com/lkrasa/pocasimeteo_ha'
-});
-console.log('🎨 Card registered in Lovelace');
+  customElements.define('pocasimeteo-card', PocasimeteoCard);
+  window.customCards = window.customCards || [];
+  window.customCards.push({
+    type: 'pocasimeteo-card',
+    name: 'PočasíMeteo Card',
+    description: 'Modern weather forecast with multiple model selection'
+  });
+})();
