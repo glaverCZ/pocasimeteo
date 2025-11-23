@@ -1,6 +1,7 @@
 """Data update coordinator for PočasíMeteo."""
 import asyncio
 import logging
+import random
 from datetime import datetime, timedelta
 
 import aiohttp
@@ -10,6 +11,14 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
+# Pokus importovat astral - pokud není dostupný, použij jednoduchý fallback
+try:
+    from astral import Observer
+    from astral.sun import sun
+    ASTRAL_AVAILABLE = True
+except ImportError:
+    ASTRAL_AVAILABLE = False
+
 from .const import (
     API_URL_TEMPLATE,
     CONF_STATION,
@@ -17,6 +26,8 @@ from .const import (
     DATA_STALE_UPDATE_INTERVAL_MINUTES,
     DOMAIN,
     UPDATE_INTERVAL,
+    PRAGUE_COORDINATES,
+    PRAGUE_TIMEZONE,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -27,6 +38,7 @@ class PocasimeteoDataUpdateCoordinator(DataUpdateCoordinator):
 
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
         """Initialize."""
+        self.hass = hass  # Ulož hass pro později
         self.station = entry.data[CONF_STATION]
         self.api_url = API_URL_TEMPLATE.format(station=self.station)
         # URL pro refresh dat (musí se zavolat před stažením JSON)
@@ -46,6 +58,118 @@ class PocasimeteoDataUpdateCoordinator(DataUpdateCoordinator):
 
         # Pro sledování refresh URL - volá se max jednou za hodinu
         self._last_refresh_time = None
+
+        # Nastav scheduler na 1-2 minuty po každé celé hodině
+        self._setup_hourly_schedule(hass)
+
+    def _setup_hourly_schedule(self, hass: HomeAssistant) -> None:
+        """Setup scheduler to run update at 1-2 minutes past every hour."""
+        from homeassistant.helpers.event import async_track_point_in_time
+
+        async def schedule_next_update() -> None:
+            """Schedule the next update at 1-2 minutes past the hour."""
+            now = datetime.now(PRAGUE_TIMEZONE)
+
+            # Vypočítej čas příštího updatu (1-2 minut po celé hodině)
+            # Vyber náhodně mezi minutou 1 a 2 pro distribuci zátěže
+            minute_offset = random.randint(1, 2)
+
+            # Pokud jsme už během tohoto minútového okna, jdi na příští hodinu
+            if now.minute >= minute_offset:
+                # Příští hodina
+                next_update_time = now.replace(minute=minute_offset, second=0, microsecond=0)
+                next_update_time = next_update_time.replace(hour=(now.hour + 1) % 24)
+                if now.hour + 1 >= 24:
+                    next_update_time = next_update_time.replace(day=now.day + 1, hour=0)
+            else:
+                # Tato hodina
+                next_update_time = now.replace(minute=minute_offset, second=0, microsecond=0)
+
+            _LOGGER.debug(f"Scheduling next update at {next_update_time.strftime('%H:%M')}")
+
+            # Zaregistruj callback na příští čas
+            async_track_point_in_time(
+                hass,
+                self.async_request_refresh,
+                next_update_time
+            )
+
+            # Zaregistruj se znovu pro příště
+            async_track_point_in_time(
+                hass,
+                lambda _: asyncio.create_task(schedule_next_update()),
+                next_update_time + timedelta(minutes=1)
+            )
+
+        # Nastartuj scheduler
+        hass.async_create_task(schedule_next_update())
+
+    def _get_sunrise_sunset(self) -> dict:
+        """Calculate sunrise and sunset times for Prague."""
+        try:
+            if ASTRAL_AVAILABLE:
+                # Používej astral library pokud je dostupný
+                observer = Observer(
+                    latitude=PRAGUE_COORDINATES["latitude"],
+                    longitude=PRAGUE_COORDINATES["longitude"],
+                    elevation=0
+                )
+                sun_data = sun(observer, date=datetime.now(PRAGUE_TIMEZONE).date(), tzinfo=PRAGUE_TIMEZONE)
+                sunrise_str = sun_data["sunrise"].strftime("%H:%M")
+                sunset_str = sun_data["sunset"].strftime("%H:%M")
+            else:
+                # Fallback na jednoduchý algoritmus bez závislostí
+                import math
+                today = datetime.now()
+                day_of_year = today.timetuple().tm_yday
+
+                latitude = PRAGUE_COORDINATES["latitude"]
+                latitude_rad = math.radians(latitude)
+
+                # Aproximace sluneční deklinace
+                solar_declination = 0.4093 * math.sin((2 * math.pi * (day_of_year - 81)) / 365)
+
+                # Časový úhel pro sunrise/sunset
+                cos_hour_angle = -math.tan(latitude_rad) * math.tan(solar_declination)
+                cos_hour_angle = max(-1, min(1, cos_hour_angle))
+                hour_angle = math.acos(cos_hour_angle)
+
+                # Sluneční čas
+                sunrise_solar_time = 12 - (hour_angle * 180 / math.pi) / 15
+                sunset_solar_time = 12 + (hour_angle * 180 / math.pi) / 15
+
+                # Místní čas (Praha UTC+2 v létě, UTC+1 v zimě)
+                # Zjednoduš na UTC+2 pro leto a UTC+1 pro zimu
+                is_summer = 3 <= today.month <= 10  # Zjednodušená detekce léta
+                timezone_offset = 2 if is_summer else 1
+
+                sunrise_hour = sunrise_solar_time + timezone_offset
+                sunset_hour = sunset_solar_time + timezone_offset
+
+                # Normalizuj na 24h formát
+                sunrise_hour = sunrise_hour % 24
+                sunset_hour = sunset_hour % 24
+
+                sunrise_str = f"{int(sunrise_hour):02d}:{int((sunrise_hour % 1) * 60):02d}"
+                sunset_str = f"{int(sunset_hour):02d}:{int((sunset_hour % 1) * 60):02d}"
+
+            _LOGGER.debug(f"Sunrise: {sunrise_str}, Sunset: {sunset_str}")
+
+            return {
+                "sunrise": sunrise_str,
+                "sunset": sunset_str,
+                "sunrise_datetime": None,
+                "sunset_datetime": None,
+            }
+        except Exception as err:
+            _LOGGER.error(f"Error calculating sunrise/sunset: {err}")
+            # Fallback na typické hodnoty pro Prahu
+            return {
+                "sunrise": "06:30",
+                "sunset": "19:30",
+                "sunrise_datetime": None,
+                "sunset_datetime": None,
+            }
 
     async def _async_refresh_data(self, session):
         """Refresh data on the server side."""
@@ -231,6 +355,9 @@ class PocasimeteoDataUpdateCoordinator(DataUpdateCoordinator):
                 async with aiohttp.ClientSession() as session:
                     _LOGGER.debug("ClientSession created successfully")
 
+                    # KROK 0: Spočítej sunrise/sunset
+                    sun_times = self._get_sunrise_sunset()
+
                     # KROK 1: Refresh URL - volá se max jednou za hodinu
                     _LOGGER.info("→ KROK 1: Calling refresh data method")
                     await self._async_refresh_data(session)
@@ -239,8 +366,9 @@ class PocasimeteoDataUpdateCoordinator(DataUpdateCoordinator):
                     # KROK 2: Stáhni data pro všechny modely
                     _LOGGER.info("→ KROK 2: Fetching data for all models")
                     processed_data = {
-                        "available_models": ["MASTER", "ALADIN", "ICON", "GFS", "ECMWF", "WRF", "COSMO", "ARPEGE"],
-                        "models": {}
+                        "available_models": ["MASTER", "ALADIN", "ICON", "GFS", "ECMWF", "WRF", "COSMO", "ARPEGE", "YRno"],
+                        "models": {},
+                        "sun_times": sun_times  # Přidej sunrise/sunset do kořenových dat
                     }
 
                     # Všechny dostupné modely s odpovídajícími soubory
@@ -253,6 +381,7 @@ class PocasimeteoDataUpdateCoordinator(DataUpdateCoordinator):
                         "WRF": "WRF_data.json",
                         "COSMO": "COSMO_data.json",
                         "ARPEGE": "ARPEGE_data.json",
+                        "YRno": "YRno_data.json",
                     }
 
                     # Fetchuj data pro všechny modely
@@ -286,7 +415,7 @@ class PocasimeteoDataUpdateCoordinator(DataUpdateCoordinator):
                     # Pokud nemáme data pro ostatní modely, použij MASTER data jako fallback
                     # aby entity mohly existovat
                     master_data_copy = processed_data["models"].get("MASTER", {})
-                    for model in ["ALADIN", "ICON", "GFS", "ECMWF", "WRF", "COSMO", "ARPEGE"]:
+                    for model in ["ALADIN", "ICON", "GFS", "ECMWF", "WRF", "COSMO", "ARPEGE", "YRno"]:
                         if model not in processed_data["models"] and master_data_copy:
                             _LOGGER.debug(f"Using MASTER data as fallback for {model}")
                             processed_data["models"][model] = master_data_copy.copy()

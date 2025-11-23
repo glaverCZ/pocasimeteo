@@ -1,17 +1,18 @@
 """Constants for the PočasíMeteo integration."""
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 DOMAIN = "pocasimeteo"
 CONF_STATION = "station"
 CONF_MODEL = "model"
 
-# Dostupné stanice (můžeš rozšířit)
-STATIONS = {
-    "praha-6-ruzyne": "Praha 6 - Ruzyně",
-    "brno": "Brno",
-    "ostrava": "Ostrava",
-    "plzen": "Plzeň",
-}
+# Souřadnice a časové pásmo pro Prahu
+PRAGUE_COORDINATES = {"latitude": 50.0755, "longitude": 14.4378}
+PRAGUE_TIMEZONE = ZoneInfo("Europe/Prague")
+
+# Výchozí stanice
+DEFAULT_STATION = "praha-6-ruzyne"
+DEFAULT_STATION_NAME = "Praha 6 - Ruzyně"
 
 # Dostupné modely předpovědi
 WEATHER_MODELS = {
@@ -23,12 +24,14 @@ WEATHER_MODELS = {
     "WRF": "WRF",
     "COSMO": "COSMO",
     "ARPEGE": "ARPEGE",
+    "YRno": "YRno",
 }
 
 # URL šablona pro API
 API_URL_TEMPLATE = "https://ext.pocasimeteo.cz/{station}/predpoved/data/weather_data.json"
 
-# Aktualizační interval - každou celou hodinu
+# Aktualizační interval - 1 minutu po každé celé hodině (s malou náhodností pro distribuci zátěže)
+# Pozn: Tento interval se ignoruje v coordinatoru, kde se místo toho nastavuje konkrétní čas
 UPDATE_INTERVAL = timedelta(hours=1)
 
 # Maximální věk dat v minutách (starší data jsou považována za zastaralá)
@@ -38,22 +41,9 @@ DATA_MAX_AGE_MINUTES = 90
 DATA_STALE_UPDATE_INTERVAL_MINUTES = 5
 
 # Mapování API ikon na skutečné PNG soubory (s prefixem "a")
-ICON_CODE_MAP = {
-    "01": "a01d",  # Slunečno den
-    "02": "a02d",  # Polojasno den
-    "03": "a03d",  # Zataženo den
-    "04": "a04",   # Zataženo
-    "05": "a05d",  # Déšť den
-    "06": "a06d",  # Sníh den
-    "07": "a07d",  # Bouřka den
-    "08": "a08d",  # Mrak den
-    "09": "a09",   # Déšť
-    "10": "a10",   # Déšť
-    "11": "a11",   # Bouřka
-    "13": "a13",   # Sníh
-    "46": "a10",   # Déšť (přímé mapování API)
-    "50": "a50",   # Mlha
-}
+# Defaultní logika: "01" → "a01.png", "46" → "a46.png", atd.
+# Bez speciálního mapování - mapování probíhá čistě v frontend kódu
+ICON_CODE_MAP = {}
 
 # Mapování kódů počasí na HA podmínky
 CONDITION_MAP = {

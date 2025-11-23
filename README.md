@@ -87,6 +87,61 @@ ha core restart
    - Typ: `custom:pocasimeteo-card`
    - Entity: `weather.pocasimeteo_*`
 
+## ⚙️ Konfigurace Karty
+
+### Základní Konfigurace
+
+```yaml
+type: custom:pocasimeteo-card
+entity: weather.pocasimeteo_praha_6_ruzyne
+```
+
+### Parametry
+
+| Parametr | Typ | Default | Popis |
+|----------|-----|---------|-------|
+| `entity` | string | - | **Povinná** - entita počasí (weather.*) |
+| `scale` | number | 1.0 | Zvětšení/zmenšení všech prvků |
+| `show_current_weather` | boolean | true | Zobrazit aktuální počasí |
+| `show_hourly_forecast` | boolean | true | Zobrazit hodinovou předpověď |
+| `show_daily_forecast` | boolean | true | Zobrazit denní předpověď |
+| `full_width` | boolean | false | Karta na plnou šířku |
+
+### Příklady
+
+**Zvětšení na 1.2x (20% větší):**
+```yaml
+type: custom:pocasimeteo-card
+entity: weather.pocasimeteo_praha_6_ruzyne
+scale: 1.2
+```
+
+**Zmenšení na 0.8x (20% menší):**
+```yaml
+type: custom:pocasimeteo-card
+entity: weather.pocasimeteo_praha_6_ruzyne
+scale: 0.8
+```
+
+**Všechny možnosti najednou:**
+```yaml
+type: custom:pocasimeteo-card
+entity: weather.pocasimeteo_praha_6_ruzyne
+scale: 1.1
+show_current_weather: true
+show_hourly_forecast: true
+show_daily_forecast: true
+full_width: false
+```
+
+**Dostupné stupně zvětšení:**
+- `0.7` - malá (30% menší)
+- `0.85` - menší (15% menší)
+- `1.0` - normální (výchozí)
+- `1.15` - větší (15% větší)
+- `1.3` - velká (30% větší)
+- `1.5` - velmi velká (50% větší)
+
 ## 🔍 DEBUG - Řešení problémů
 
 ### Lovelace Karta Nefunguje?
