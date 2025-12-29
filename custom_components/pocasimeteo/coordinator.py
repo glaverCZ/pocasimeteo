@@ -366,7 +366,7 @@ class PocasimeteoDataUpdateCoordinator(DataUpdateCoordinator):
                     # KROK 2: Stáhni data pro všechny modely
                     _LOGGER.info("→ KROK 2: Fetching data for all models")
                     processed_data = {
-                        "available_models": ["MASTER", "ALADIN", "ICON", "GFS", "ECMWF", "WRF", "COSMO", "ARPEGE", "YRno"],
+                        "available_models": ["MASTER", "ALADIN", "ICON", "GFS", "ECMWF", "WRF", "COSMO", "YRno"],
                         "models": {},
                         "sun_times": sun_times  # Přidej sunrise/sunset do kořenových dat
                     }
@@ -380,7 +380,6 @@ class PocasimeteoDataUpdateCoordinator(DataUpdateCoordinator):
                         "ECMWF": "ECMWF_data.json",
                         "WRF": "WRF_data.json",
                         "COSMO": "COSMO_data.json",
-                        "ARPEGE": "ARPEGE_data.json",
                         "YRno": "YRno_data.json",
                     }
 
@@ -415,7 +414,7 @@ class PocasimeteoDataUpdateCoordinator(DataUpdateCoordinator):
                     # Pokud nemáme data pro ostatní modely, použij MASTER data jako fallback
                     # aby entity mohly existovat
                     master_data_copy = processed_data["models"].get("MASTER", {})
-                    for model in ["ALADIN", "ICON", "GFS", "ECMWF", "WRF", "COSMO", "ARPEGE", "YRno"]:
+                    for model in ["ALADIN", "ICON", "GFS", "ECMWF", "WRF", "COSMO", "YRno"]:
                         if model not in processed_data["models"] and master_data_copy:
                             _LOGGER.debug(f"Using MASTER data as fallback for {model}")
                             processed_data["models"][model] = master_data_copy.copy()
@@ -427,6 +426,10 @@ class PocasimeteoDataUpdateCoordinator(DataUpdateCoordinator):
                     processed_data = self._check_data_staleness(processed_data)
 
                     _LOGGER.info("✓ Successfully fetched data for %d models", len(processed_data["models"]))
+
+                    # Zaznamenej accuracy dat - pokud je k dispozici reference_temperature_entity
+                    await self._track_model_accuracy(processed_data)
+
                     return processed_data
 
         except aiohttp.ClientError as err:
@@ -435,3 +438,73 @@ class PocasimeteoDataUpdateCoordinator(DataUpdateCoordinator):
         except Exception as err:
             _LOGGER.error("✗ Unexpected error: %s", err, exc_info=True)
             raise UpdateFailed(f"Unexpected error: {err}")
+
+    async def _track_model_accuracy(self, processed_data: dict) -> None:
+        """Track accuracy of each model against reference temperature entity.
+
+        Fires an event for each model comparing forecast temperature vs actual.
+        Home Assistant will record this in history for later analysis.
+        """
+        try:
+            # Ziskej reference_temperature_entity z config entry options
+            reference_entity = None
+            for entry in self.hass.config_entries.async_entries(DOMAIN):
+                if entry.data.get(CONF_STATION) == self.station:
+                    # Hledej v options (nastavení integrací)
+                    reference_entity = entry.options.get("reference_temperature_entity")
+                    break
+
+            if not reference_entity:
+                _LOGGER.debug("No reference_temperature_entity configured for accuracy tracking")
+                return
+
+            # Ziskej aktuální teplotu z reference entity
+            ref_entity_state = self.hass.states.get(reference_entity)
+            if not ref_entity_state or not ref_entity_state.state:
+                _LOGGER.debug(f"Reference entity {reference_entity} has no state")
+                return
+
+            try:
+                actual_temp = float(ref_entity_state.state)
+            except (ValueError, TypeError):
+                _LOGGER.debug(f"Reference entity {reference_entity} state is not a number: {ref_entity_state.state}")
+                return
+
+            # Pro každý model vypočítej chybu (absolutní diference)
+            for model_name, model_data in processed_data["models"].items():
+                forecast_data = model_data.get("data", [])
+                if not forecast_data:
+                    continue
+
+                # Vezmi teplotu z prvního forecastu (nejbližší budoucnost)
+                first_forecast = forecast_data[0] if isinstance(forecast_data, list) else forecast_data
+
+                if isinstance(first_forecast, dict):
+                    try:
+                        forecast_temp = float(first_forecast.get("teplota", 0))
+                    except (ValueError, TypeError):
+                        continue
+
+                    # Vypočítej absolutní chybu
+                    error = abs(forecast_temp - actual_temp)
+
+                    # Vyslij event pro zaznamenání v HA history
+                    self.hass.bus.async_fire(
+                        "pocasimeteo_accuracy_update",
+                        {
+                            "model": model_name,
+                            "station": self.station,
+                            "reference_entity": reference_entity,
+                            "actual_temperature": actual_temp,
+                            "forecast_temperature": forecast_temp,
+                            "absolute_error": error,
+                            "timestamp": datetime.now(PRAGUE_TIMEZONE).isoformat()
+                        }
+                    )
+
+                    _LOGGER.debug(
+                        f"Model {model_name}: actual={actual_temp}°C, forecast={forecast_temp}°C, error={error:.1f}°C"
+                    )
+
+        except Exception as err:
+            _LOGGER.debug(f"Error tracking model accuracy: {err}", exc_info=True)

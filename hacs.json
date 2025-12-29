@@ -1,11 +1,7 @@
 {
-  "name": "PočasíMeteo Weather Integration",
+  "name": "PočasíMeteo",
   "content_in_root": false,
+  "country": ["CZ"],
   "homeassistant": "2024.1.0",
-  "iot_class": "cloud_polling",
-  "render_readme": true,
-  "domains": ["weather"],
-  "documentation": "https://github.com/glaverCZ/pocasimeteo_ha",
-  "issues": "https://github.com/glaverCZ/pocasimeteo_ha/issues",
-  "requirements": []
+  "render_readme": true
 }

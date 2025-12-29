@@ -31,10 +31,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
         _LOGGER.info("✓ PočasíMeteo setup completed successfully")
 
+        # Listen to options updates
+        entry.async_on_unload(entry.add_update_listener(async_update_entry))
+
         return True
     except Exception as err:
         _LOGGER.error("✗ Error setting up PočasíMeteo: %s", err, exc_info=True)
         raise
+
+
+async def async_update_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Update options."""
+    await hass.config_entries.async_reload(entry.entry_id)
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:

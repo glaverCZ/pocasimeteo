@@ -10,9 +10,9 @@ CONF_MODEL = "model"
 PRAGUE_COORDINATES = {"latitude": 50.0755, "longitude": 14.4378}
 PRAGUE_TIMEZONE = ZoneInfo("Europe/Prague")
 
-# Výchozí stanice
-DEFAULT_STATION = "praha-6-ruzyne"
-DEFAULT_STATION_NAME = "Praha 6 - Ruzyně"
+# Příklady dostupných stanic (uživatel může zadat libovolnou stanici)
+# Formát: název stanice odpovídající URL na pocasimeteo.cz
+# Např.: praha-6-ruzyne, brno, ostrava, plzen, liberec, olomouc, atd.
 
 # Dostupné modely předpovědi
 WEATHER_MODELS = {
@@ -23,7 +23,6 @@ WEATHER_MODELS = {
     "ECMWF": "ECMWF",
     "WRF": "WRF",
     "COSMO": "COSMO",
-    "ARPEGE": "ARPEGE",
     "YRno": "YRno",
 }
 
