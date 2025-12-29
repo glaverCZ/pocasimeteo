@@ -16,13 +16,23 @@ PLATFORMS = [Platform.WEATHER]
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     """Set up the PočasíMeteo component."""
+    return True
+
+
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Set up PočasíMeteo from a config entry."""
+    _LOGGER.info("▶ Setting up PočasíMeteo integration")
+
     # Copy card to www/community/pocasimeteo-card/ for automatic loading
+    # This runs once per config entry setup
     try:
         import shutil
 
         source_path = Path(__file__).parent / "www" / "pocasimeteo-card.js"
         dest_dir = Path(hass.config.path("www/community/pocasimeteo-card"))
         dest_path = dest_dir / "pocasimeteo-card.js"
+
+        _LOGGER.info("→ Checking card source: %s", source_path)
 
         # Create directory if it doesn't exist
         dest_dir.mkdir(parents=True, exist_ok=True)
@@ -32,23 +42,16 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
             shutil.copy2(source_path, dest_path)
             _LOGGER.info("✓ PočasíMeteo: Card copied to %s", dest_path)
         else:
-            _LOGGER.warning("PočasíMeteo: Card source not found at %s", source_path)
+            _LOGGER.error("✗ PočasíMeteo: Card source NOT FOUND at %s", source_path)
 
         # Add JS URL to frontend - this loads the card automatically
         hass.components.frontend.add_extra_js_url(
             hass, "/hacsfiles/pocasimeteo-card/pocasimeteo-card.js"
         )
-        _LOGGER.info("✓ PočasíMeteo: Frontend JS registered (/hacsfiles/pocasimeteo-card/pocasimeteo-card.js)")
+        _LOGGER.info("✓ PočasíMeteo: Frontend JS registered")
 
     except Exception as err:
-        _LOGGER.error("Failed to setup PočasíMeteo frontend: %s", err, exc_info=True)
-
-    return True
-
-
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Set up PočasíMeteo from a config entry."""
-    _LOGGER.info("▶ Setting up PočasíMeteo integration")
+        _LOGGER.error("✗ Failed to setup PočasíMeteo frontend: %s", err, exc_info=True)
 
     try:
         _LOGGER.info("→ Creating coordinator")
