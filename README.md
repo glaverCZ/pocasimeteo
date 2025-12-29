@@ -77,14 +77,12 @@ Integrace obsahuje pokročilou Lovelace custom card s podporou více modelů a s
 
 ### Instalace card
 
-1. **Přidání resource** (po instalaci přes HACS):
-   - Přejděte do **Nastavení** → **Dashboardy** → **Resources**
-   - Klikněte na **+ PŘIDAT RESOURCE**
-   - URL: `/hacsfiles/pocasimeteo/pocasimeteo-card.js`
-   - Typ: **JavaScript Module**
-   - Klikněte na **VYTVOŘIT**
+Card se automaticky zaregistruje po instalaci integrace přes HACS. Stačí:
 
-2. **Refresh browser cache**: Stiskněte `Ctrl+F5` nebo `Cmd+Shift+R`
+1. **Refresh browser cache**: Stiskněte `Ctrl+F5` nebo `Cmd+Shift+R`
+2. **Přidejte card do dashboardu** (viz níže)
+
+> **Poznámka:** Po instalaci nebo aktualizaci vždy proveďte hard refresh (`Ctrl+F5`) aby se načetla nová verze card.
 
 ### Použití card
 

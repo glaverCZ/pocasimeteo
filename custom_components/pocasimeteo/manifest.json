@@ -1,7 +1,7 @@
 {
   "domain": "pocasimeteo",
   "name": "PočasíMeteo",
-  "version": "1.2.0",
+  "version": "1.2.2",
   "documentation": "https://github.com/glaverCZ/pocasimeteo",
   "issue_tracker": "https://github.com/glaverCZ/pocasimeteo/issues",
   "requirements": [],

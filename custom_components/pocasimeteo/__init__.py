@@ -1,5 +1,6 @@
 """The PočasíMeteo integration."""
 import logging
+from pathlib import Path
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
@@ -11,6 +12,17 @@ from .coordinator import PocasimeteoDataUpdateCoordinator
 _LOGGER = logging.getLogger(__name__)
 
 PLATFORMS = [Platform.WEATHER]
+
+
+async def async_setup(hass: HomeAssistant, config: dict) -> bool:
+    """Set up the PočasíMeteo component."""
+    # Register frontend resources for Lovelace card
+    hass.http.register_static_path(
+        "/hacsfiles/pocasimeteo",
+        str(Path(__file__).parent / "www"),
+        cache_headers=False,
+    )
+    return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
