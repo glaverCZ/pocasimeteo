@@ -16,24 +16,24 @@ PLATFORMS = [Platform.WEATHER]
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     """Set up the PočasíMeteo component."""
-    # Register static paths EARLY, during HA startup
-    # This must happen before frontend loads
+    # Copy card to www/community for HACS compatibility
+    # HACS expects frontend resources in www/community/domain/
     try:
-        www_path = str(Path(__file__).parent / "www")
+        import shutil
 
-        hass.http.async_register_static_paths([
-            {
-                "url_path": "/hacsfiles/pocasimeteo",
-                "path": www_path,
-            }
-        ])
-        hass.http.async_register_static_paths([
-            {
-                "url_path": "/local/pocasimeteo",
-                "path": www_path,
-            }
-        ])
-        _LOGGER.info("✓ PočasíMeteo: Static paths registered (www: %s)", www_path)
+        source_path = Path(__file__).parent / "www" / "pocasimeteo-card.js"
+        dest_dir = Path(hass.config.path("www/community/pocasimeteo"))
+        dest_path = dest_dir / "pocasimeteo-card.js"
+
+        # Create directory if it doesn't exist
+        dest_dir.mkdir(parents=True, exist_ok=True)
+
+        # Copy file
+        if source_path.exists():
+            shutil.copy2(source_path, dest_path)
+            _LOGGER.info("✓ PočasíMeteo: Card copied to www/community (%s)", dest_path)
+        else:
+            _LOGGER.warning("PočasíMeteo: Source card not found at %s", source_path)
 
         # Add JS URL to frontend - this loads the card automatically
         hass.components.frontend.add_extra_js_url(
