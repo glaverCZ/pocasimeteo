@@ -39,8 +39,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             }
         ])
         _LOGGER.info("✓ Frontend static paths registered")
+
+        # Add JS URL to frontend - this loads the card automatically
+        hass.components.frontend.add_extra_js_url(
+            hass, "/hacsfiles/pocasimeteo/pocasimeteo-card.js"
+        )
+        _LOGGER.info("✓ Frontend JS URL registered (/hacsfiles/pocasimeteo/pocasimeteo-card.js)")
+
     except Exception as err:
-        _LOGGER.warning("Failed to register static paths: %s", err)
+        _LOGGER.warning("Failed to register static paths or frontend: %s", err)
 
     try:
         _LOGGER.info("→ Creating coordinator")
