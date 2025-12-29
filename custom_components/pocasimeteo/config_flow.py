@@ -9,7 +9,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers import selector
 
-from .const import CONF_MODEL, CONF_STATION, DOMAIN, WEATHER_MODELS
+from .const import CONF_MODEL, CONF_STATION, DOMAIN, WEATHER_MODELS_LABELS
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -56,7 +56,7 @@ class PocasimeteoConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         data_schema = vol.Schema(
             {
                 vol.Required(CONF_STATION): str,
-                vol.Required(CONF_MODEL, default="MASTER"): vol.In(WEATHER_MODELS),
+                vol.Required(CONF_MODEL, default="MASTER"): vol.In(WEATHER_MODELS_LABELS),
             }
         )
 

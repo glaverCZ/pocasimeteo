@@ -365,22 +365,21 @@ class PocasimeteoDataUpdateCoordinator(DataUpdateCoordinator):
 
                     # KROK 2: Stáhni data pro všechny modely
                     _LOGGER.info("→ KROK 2: Fetching data for all models")
+
+                    # Import WEATHER_MODELS from const
+                    from .const import WEATHER_MODELS
+
+                    available_model_names = list(WEATHER_MODELS.keys())
+
                     processed_data = {
-                        "available_models": ["MASTER", "ALADIN", "ICON", "GFS", "ECMWF", "WRF", "COSMO", "YRno"],
+                        "available_models": available_model_names,
                         "models": {},
                         "sun_times": sun_times  # Přidej sunrise/sunset do kořenových dat
                     }
 
-                    # Všechny dostupné modely s odpovídajícími soubory
+                    # Všechny dostupné modely s odpovídajícími soubory (z WEATHER_MODELS)
                     models_to_fetch = {
-                        "MASTER": "MASTER_data.json",  # Skutečná MASTER data
-                        "ALADIN": "ALADIN_data.json",
-                        "ICON": "ICON_data.json",
-                        "GFS": "GFS_data.json",
-                        "ECMWF": "ECMWF_data.json",
-                        "WRF": "WRF_data.json",
-                        "COSMO": "COSMO_data.json",
-                        "YRno": "YRno_data.json",
+                        name: info["file"] for name, info in WEATHER_MODELS.items()
                     }
 
                     # Fetchuj data pro všechny modely
@@ -414,7 +413,7 @@ class PocasimeteoDataUpdateCoordinator(DataUpdateCoordinator):
                     # Pokud nemáme data pro ostatní modely, použij MASTER data jako fallback
                     # aby entity mohly existovat
                     master_data_copy = processed_data["models"].get("MASTER", {})
-                    for model in ["ALADIN", "ICON", "GFS", "ECMWF", "WRF", "COSMO", "YRno"]:
+                    for model in available_model_names:
                         if model not in processed_data["models"] and master_data_copy:
                             _LOGGER.debug(f"Using MASTER data as fallback for {model}")
                             processed_data["models"][model] = master_data_copy.copy()

@@ -144,15 +144,18 @@ class PocasimeteoWeather(CoordinatorEntity, WeatherEntity):
         # Nastavení unique_id a entity_id
         station_clean = self._station.replace("-", "_")
 
+        # Get model label from WEATHER_MODELS
+        model_label = WEATHER_MODELS.get(model, {}).get("label", model)
+
         if is_primary:
             # Primární entita bez suffixu
             self._attr_unique_id = f"pocasimeteo_{station_clean}"
             self._attr_name = f"PočasíMeteo {self._station}"
         else:
-            # Ostatní entity se suffixem modelu
+            # Ostatní entity se suffixem modelu (používej label místo názvu)
             model_lower = model.lower()
             self._attr_unique_id = f"pocasimeteo_{station_clean}_{model_lower}"
-            self._attr_name = f"PočasíMeteo {self._station} {model}"
+            self._attr_name = f"PočasíMeteo {self._station} {model_label}"
 
     def _is_after_sunset(self) -> bool:
         """Check if current time is after sunset."""
@@ -358,8 +361,11 @@ class PocasimeteoWeather(CoordinatorEntity, WeatherEntity):
         # Get available models from coordinator data
         available_models = self.coordinator.data.get("available_models", [])
 
+        # Get model label
+        model_label = WEATHER_MODELS.get(self._model, {}).get("label", self._model)
+
         attributes = {
-            "model": WEATHER_MODELS.get(self._model, self._model),
+            "model": model_label,
             "available_models": available_models,
             "cloudiness": current.get("O"),
             "precipitation_probability": current.get("SP"),

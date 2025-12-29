@@ -15,16 +15,19 @@ PRAGUE_TIMEZONE = ZoneInfo("Europe/Prague")
 # Např.: praha-6-ruzyne, brno, ostrava, plzen, liberec, olomouc, atd.
 
 # Dostupné modely předpovědi
+# Format: "MODEL_NAME": {"label": "Display Label", "file": "API_filename.json"}
 WEATHER_MODELS = {
-    "MASTER": "Master (Ensemble)",
-    "ALADIN": "ALADIN",
-    "ICON": "ICON",
-    "GFS": "GFS",
-    "ECMWF": "ECMWF",
-    "WRF": "WRF",
-    "COSMO": "COSMO",
-    "YRno": "YRno",
+    "MASTER": {"label": "MASTER", "file": "MASTER_data.json"},
+    "ALADIN": {"label": "ALADIN", "file": "ALADIN_data.json"},
+    "ICON": {"label": "ICONDE", "file": "ICON_data.json"},
+    "COSMO": {"label": "ICONEU", "file": "COSMO_data.json"},
+    "YRno": {"label": "YRno", "file": "YRno_data.json"},
+    "GFS": {"label": "GFS", "file": "GFS_data.json"},
+    "WRF": {"label": "WRF", "file": "WRF_data.json"},
 }
+
+# Backwards compatibility - pro selectory v config flow
+WEATHER_MODELS_LABELS = {name: info["label"] for name, info in WEATHER_MODELS.items()}
 
 # URL šablona pro API
 API_URL_TEMPLATE = "https://ext.pocasimeteo.cz/{station}/predpoved/data/weather_data.json"
