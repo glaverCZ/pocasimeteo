@@ -1,0 +1,21 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Nastavení PočasíMeteo",
+        "description": "Vyber meteorologickou stanici a preferovaný model předpovědi",
+        "data": {
+          "station": "Meteorologická stanice",
+          "model": "Preferovaný model předpovědi"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Nelze se připojit k API",
+      "unknown": "Neočekávaná chyba"
+    },
+    "abort": {
+      "already_configured": "Tato stanice je již nakonfigurována"
+    }
+  }
+}

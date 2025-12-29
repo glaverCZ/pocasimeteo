@@ -1,0 +1,11 @@
+{
+  "domain": "pocasimeteo",
+  "name": "PočasíMeteo",
+  "version": "1.0.0",
+  "documentation": "https://github.com/glaverCZ/pocasimeteo",
+  "issue_tracker": "https://github.com/glaverCZ/pocasimeteo/issues",
+  "requirements": [],
+  "codeowners": ["@glaverCZ"],
+  "iot_class": "cloud_polling",
+  "config_flow": true
+}
