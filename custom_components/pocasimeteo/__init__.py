@@ -16,38 +16,40 @@ PLATFORMS = [Platform.WEATHER]
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     """Set up the PočasíMeteo component."""
+    # Register static paths EARLY, during HA startup
+    # This must happen before frontend loads
+    try:
+        www_path = str(Path(__file__).parent / "www")
+
+        hass.http.async_register_static_paths([
+            {
+                "url_path": "/hacsfiles/pocasimeteo",
+                "path": www_path,
+            }
+        ])
+        hass.http.async_register_static_paths([
+            {
+                "url_path": "/local/pocasimeteo",
+                "path": www_path,
+            }
+        ])
+        _LOGGER.info("✓ PočasíMeteo: Static paths registered (www: %s)", www_path)
+
+        # Add JS URL to frontend - this loads the card automatically
+        hass.components.frontend.add_extra_js_url(
+            hass, "/hacsfiles/pocasimeteo/pocasimeteo-card.js"
+        )
+        _LOGGER.info("✓ PočasíMeteo: Frontend JS URL registered")
+
+    except Exception as err:
+        _LOGGER.error("Failed to register PočasíMeteo frontend resources: %s", err, exc_info=True)
+
     return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up PočasíMeteo from a config entry."""
     _LOGGER.info("▶ Setting up PočasíMeteo integration")
-
-    # Register static paths FIRST, before anything else
-    # This ensures the www folder is accessible when frontend loads
-    try:
-        hass.http.async_register_static_paths([
-            {
-                "url_path": "/hacsfiles/pocasimeteo",
-                "path": str(Path(__file__).parent / "www"),
-            }
-        ])
-        hass.http.async_register_static_paths([
-            {
-                "url_path": "/local/pocasimeteo",
-                "path": str(Path(__file__).parent / "www"),
-            }
-        ])
-        _LOGGER.info("✓ Frontend static paths registered")
-
-        # Add JS URL to frontend - this loads the card automatically
-        hass.components.frontend.add_extra_js_url(
-            hass, "/hacsfiles/pocasimeteo/pocasimeteo-card.js"
-        )
-        _LOGGER.info("✓ Frontend JS URL registered (/hacsfiles/pocasimeteo/pocasimeteo-card.js)")
-
-    except Exception as err:
-        _LOGGER.warning("Failed to register static paths or frontend: %s", err)
 
     try:
         _LOGGER.info("→ Creating coordinator")
