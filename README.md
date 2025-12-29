@@ -4,7 +4,7 @@
 [![GitHub release](https://img.shields.io/github/release/glaverCZ/pocasimeteo.svg)](https://github.com/glaverCZ/pocasimeteo/releases)
 [![License](https://img.shields.io/github/license/glaverCZ/pocasimeteo.svg)](LICENSE)
 
-Home Assistant integrace pro meteorologická data z [PočasíMeteo.cz](https://www.pocasimeteo.cz/) (ČHMÚ).
+Home Assistant integrace pro meteorologická data z [PočasíMeteo.cz](https://www.pocasimeteo.cz/).
 
 ## Funkce
 
