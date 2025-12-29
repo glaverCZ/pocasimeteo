@@ -45,15 +45,27 @@ Home Assistant integrace pro meteorologická data z [PočasíMeteo.cz](https://w
 
 ### HACS (doporučeno)
 
+**Krok 1: Instalace integrace (backend)**
+
 1. Otevřete HACS v Home Assistant
-2. Přejděte do sekce "Integrations"
-3. Klikněte na tři tečky v pravém horním rohu
-4. Vyberte "Custom repositories"
-5. Přidejte URL: `https://github.com/glaverCZ/pocasimeteo`
-6. Kategorie: `Integration`
-7. Klikněte na "Add"
-8. Najděte "PočasíMeteo" v seznamu a klikněte na "Download"
-9. Restartujte Home Assistant
+2. Přejděte do sekce **"Integrations"**
+3. Klikněte na **+ EXPLORE & DOWNLOAD REPOSITORIES**
+4. Vyhledejte **"PočasíMeteo"**
+5. Klikněte na **Download**
+6. Restartujte Home Assistant
+
+**Krok 2: Instalace Lovelace card (frontend)**
+
+1. Otevřete HACS v Home Assistant
+2. Přejděte do sekce **"Frontend"**
+3. Klikněte na tři tečky v pravém horním rohu → **Custom repositories**
+4. Přidejte URL: `https://github.com/glaverCZ/pocasimeteo`
+5. Kategorie: **`Dashboard`**
+6. Klikněte na **"Add"**
+7. Najděte **"PočasíMeteo Card"** v seznamu a klikněte na **"Download"**
+8. **Smažte browser cache** (Ctrl+F5 nebo Cmd+Shift+R)
+
+> **Poznámka:** Integrace (backend) a card (frontend) se instalují samostatně, podobně jako u jiných HACS projektů (např. Scheduler).
 
 ### Manuální instalace
 
@@ -75,18 +87,7 @@ Home Assistant integrace pro meteorologická data z [PočasíMeteo.cz](https://w
 
 Integrace obsahuje pokročilou Lovelace custom card s podporou více modelů a srovnáním přesnosti.
 
-### Instalace card
-
-Po instalaci integrace je nutné **manuálně přidat card jako Lovelace resource**:
-
-1. Otevřete **Nastavení** → **Dashboardy** → **⋮** (tři tečky vpravo nahoře) → **Resources**
-2. Klikněte na **+ PŘIDAT RESOURCE**
-3. Zadejte URL: `/hacsfiles/pocasimeteo/pocasimeteo-card.js`
-4. Typ: **JavaScript Module**
-5. Klikněte na **VYTVOŘIT**
-6. Proveďte **hard refresh** v prohlížeči (`Ctrl+F5` nebo `Cmd+Shift+R`)
-
-> **Tip:** Tento krok je potřeba provést pouze jednou po první instalaci.
+> **Poznámka:** Card se instaluje **samostatně** jako Dashboard typ v HACS (viz instalační kroky výše).
 
 ### Použití card
 
