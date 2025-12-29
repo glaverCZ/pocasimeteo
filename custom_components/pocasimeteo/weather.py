@@ -355,8 +355,12 @@ class PocasimeteoWeather(CoordinatorEntity, WeatherEntity):
         sunrise_time = sun_times.get("sunrise", "")
         sunset_time = sun_times.get("sunset", "")
 
+        # Get available models from coordinator data
+        available_models = self.coordinator.data.get("available_models", [])
+
         attributes = {
             "model": WEATHER_MODELS.get(self._model, self._model),
+            "available_models": available_models,
             "cloudiness": current.get("O"),
             "precipitation_probability": current.get("SP"),
             "snow": current.get("SK", 0),
