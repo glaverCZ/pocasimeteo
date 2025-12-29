@@ -17,12 +17,12 @@ PLATFORMS = [Platform.WEATHER]
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     """Set up the PočasíMeteo component."""
     # Copy card to www/community for HACS compatibility
-    # HACS expects frontend resources in www/community/domain/
+    # HACS expects frontend resources in www/community/card-name/
     try:
         import shutil
 
         source_path = Path(__file__).parent / "www" / "pocasimeteo-card.js"
-        dest_dir = Path(hass.config.path("www/community/pocasimeteo"))
+        dest_dir = Path(hass.config.path("www/community/pocasimeteo-card"))
         dest_path = dest_dir / "pocasimeteo-card.js"
 
         # Create directory if it doesn't exist
@@ -37,9 +37,9 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
 
         # Add JS URL to frontend - this loads the card automatically
         hass.components.frontend.add_extra_js_url(
-            hass, "/hacsfiles/pocasimeteo/pocasimeteo-card.js"
+            hass, "/hacsfiles/pocasimeteo-card/pocasimeteo-card.js"
         )
-        _LOGGER.info("✓ PočasíMeteo: Frontend JS URL registered")
+        _LOGGER.info("✓ PočasíMeteo: Frontend JS URL registered (/hacsfiles/pocasimeteo-card/pocasimeteo-card.js)")
 
     except Exception as err:
         _LOGGER.error("Failed to register PočasíMeteo frontend resources: %s", err, exc_info=True)
