@@ -40,12 +40,11 @@
       this._modelConfigs = config.models || [
         { name: 'MASTER', label: 'MASTER' },
         { name: 'ALADIN', label: 'ALADIN' },
-        { name: 'ICON', label: 'ICON' },
+        { name: 'ICON', label: 'ICONDE' },
+        { name: 'COSMO', label: 'ICONEU' },
+        { name: 'YRno', label: 'YRno' },
         { name: 'GFS', label: 'GFS' },
-        { name: 'ECMWF', label: 'ECMWF' },
-        { name: 'WRF', label: 'WRF' },
-        { name: 'COSMO', label: 'COSMO' },
-        { name: 'YRno', label: 'YRno' }
+        { name: 'WRF', label: 'WRF' }
       ];
 
       // Reference entity pro detekci nejpřesnějšího modelu (rozšířené - více parametrů)

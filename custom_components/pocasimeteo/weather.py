@@ -86,25 +86,22 @@ async def async_setup_entry(
     """Set up PočasíMeteo weather entity."""
     coordinator = hass.data[DOMAIN][entry.entry_id]
 
-    # Vytvoř weather entity pro všechny modely
-    # Primární entita bude ta podle výběru uživatele (nebo MASTER jako fallback)
-    primary_model = entry.data.get(CONF_MODEL, "MASTER")
-
     entities = []
 
-    # Nejdřív vytvoř primární entitu (bez suffixu v názvu)
+    # VŽDY vytvoř MASTER jako primární entitu (bez suffixu)
+    # Toto je důležité pro Lovelace custom card, která očekává MASTER bez suffixu
     entities.append(
         PocasimeteoWeather(
             coordinator,
             entry,
-            primary_model,
+            "MASTER",
             is_primary=True
         )
     )
 
-    # Pak vytvoř entity pro všechny ostatní modely
+    # Pak vytvoř entity pro všechny ostatní modely (s suffixem)
     for model in WEATHER_MODELS.keys():
-        if model != primary_model:
+        if model != "MASTER":
             entities.append(
                 PocasimeteoWeather(
                     coordinator,
