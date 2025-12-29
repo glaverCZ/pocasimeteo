@@ -1,0 +1,21 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "PočasíMeteo Setup",
+        "description": "Select meteorological station and preferred forecast model",
+        "data": {
+          "station": "Meteorological Station",
+          "model": "Preferred Forecast Model"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Cannot connect to API",
+      "unknown": "Unexpected error"
+    },
+    "abort": {
+      "already_configured": "This station is already configured"
+    }
+  }
+}
