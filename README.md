@@ -77,9 +77,12 @@ Integrace obsahuje pokročilou Lovelace custom card s podporou více modelů a s
 
 ### Instalace card
 
-Card se **načítá automaticky** po instalaci integrace. Není potřeba manuálně přidávat žádné Lovelace resources.
+Card se **přidává automaticky do Lovelace resources** při instalaci nebo aktualizaci integrace. Není potřeba žádných manuálních kroků.
 
-> **Důležité:** Po instalaci nebo aktualizaci integrace vždy proveďte **hard refresh** (`Ctrl+F5` nebo `Cmd+Shift+R`) pro načtení aktuální verze card.
+> **Důležité:**
+> - Po instalaci/aktualizaci **restartujte Home Assistant**
+> - Po restartu proveďte **hard refresh** (`Ctrl+F5` nebo `Cmd+Shift+R`) v prohlížeči
+> - Card se automaticky objeví v seznamu Lovelace resources (Nastavení → Dashboardy → Resources)
 
 ### Použití card
 
