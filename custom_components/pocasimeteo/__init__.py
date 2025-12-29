@@ -16,13 +16,28 @@ PLATFORMS = [Platform.WEATHER]
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     """Set up the PočasíMeteo component."""
-    # Register frontend resources for Lovelace card
+    # Register static path for www folder (supports both HACS and manual installation)
     hass.http.async_register_static_paths([
         {
             "url_path": "/hacsfiles/pocasimeteo",
             "path": str(Path(__file__).parent / "www"),
         }
     ])
+
+    # Also register under /local path for manual installations
+    hass.http.async_register_static_paths([
+        {
+            "url_path": "/local/pocasimeteo",
+            "path": str(Path(__file__).parent / "www"),
+        }
+    ])
+
+    # Auto-register the frontend resource so it loads automatically
+    hass.components.frontend.add_extra_js_url(
+        hass, "/hacsfiles/pocasimeteo/pocasimeteo-card.js"
+    )
+
+    _LOGGER.info("✓ PočasíMeteo frontend resources registered")
     return True
 
 
