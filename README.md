@@ -45,27 +45,15 @@ Home Assistant integrace pro meteorologická data z [PočasíMeteo.cz](https://w
 
 ### HACS (doporučeno)
 
-**Krok 1: Instalace integrace (backend)**
-
 1. Otevřete HACS v Home Assistant
 2. Přejděte do sekce **"Integrations"**
 3. Klikněte na **+ EXPLORE & DOWNLOAD REPOSITORIES**
 4. Vyhledejte **"PočasíMeteo"**
 5. Klikněte na **Download**
-6. Restartujte Home Assistant
+6. **Restartujte Home Assistant**
+7. **Smažte browser cache** (Ctrl+F5 nebo Cmd+Shift+R)
 
-**Krok 2: Instalace Lovelace card (frontend)**
-
-1. Otevřete HACS v Home Assistant
-2. Přejděte do sekce **"Frontend"**
-3. Klikněte na tři tečky v pravém horním rohu → **Custom repositories**
-4. Přidejte URL: `https://github.com/glaverCZ/pocasimeteo`
-5. Kategorie: **`Dashboard`**
-6. Klikněte na **"Add"**
-7. Najděte **"PočasíMeteo Card"** v seznamu a klikněte na **"Download"**
-8. **Smažte browser cache** (Ctrl+F5 nebo Cmd+Shift+R)
-
-> **Poznámka:** Integrace (backend) a card (frontend) se instalují samostatně, podobně jako u jiných HACS projektů (např. Scheduler).
+> **Poznámka:** Lovelace card se nainstaluje automaticky při restartu Home Assistant. Není potřeba žádná manuální konfigurace.
 
 ### Manuální instalace
 
@@ -85,9 +73,7 @@ Home Assistant integrace pro meteorologická data z [PočasíMeteo.cz](https://w
 
 ## Lovelace Custom Card
 
-Integrace obsahuje pokročilou Lovelace custom card s podporou více modelů a srovnáním přesnosti.
-
-> **Poznámka:** Card se instaluje **samostatně** jako Dashboard typ v HACS (viz instalační kroky výše).
+Integrace obsahuje pokročilou Lovelace custom card s podporou více modelů a srovnáním přesnosti. Card se automaticky nainstaluje při prvním restartu Home Assistant po instalaci integrace.
 
 ### Použití card
 
