@@ -5,13 +5,9 @@ DOMAIN = "pocasimeteo"
 CONF_STATION = "station"
 CONF_MODEL = "model"
 
-# Dostupné stanice (můžeš rozšířit)
-STATIONS = {
-    "praha-6-ruzyne": "Praha 6 - Ruzyně",
-    "brno": "Brno",
-    "ostrava": "Ostrava",
-    "plzen": "Plzeň",
-}
+# Příklady dostupných stanic (uživatel může zadat libovolnou stanici)
+# Formát: název stanice odpovídající URL na pocasimeteo.cz
+# Např.: praha-6-ruzyne, brno, ostrava, plzen, liberec, olomouc, atd.
 
 # Dostupné modely předpovědi
 WEATHER_MODELS = {

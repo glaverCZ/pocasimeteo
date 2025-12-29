@@ -8,11 +8,9 @@ Home Assistant integrace pro meteorologická data z [PočasíMeteo.cz](https://w
 
 ## Funkce
 
-- **4 meteorologické stanice:**
-  - Praha 6 - Ruzyně
-  - Brno
-  - Ostrava
-  - Plzeň
+- **Libovolná meteorologická stanice:**
+  - Zadejte název stanice dostupné na PočasíMeteo.cz
+  - Např.: praha-6-ruzyne, brno, ostrava, plzen, liberec, olomouc, atd.
 
 - **8 meteorologických modelů:**
   - MASTER (Ensemble)
@@ -70,7 +68,7 @@ Home Assistant integrace pro meteorologická data z [PočasíMeteo.cz](https://w
 1. Přejděte do **Nastavení** → **Zařízení a služby**
 2. Klikněte na tlačítko **+ PŘIDAT INTEGRACI**
 3. Vyhledejte **PočasíMeteo**
-4. Vyberte meteorologickou stanici
+4. Zadejte název meteorologické stanice (např. praha-6-ruzyne)
 5. Vyberte preferovaný model předpovědi (výchozí: MASTER)
 6. Dokončete konfiguraci
 
@@ -102,9 +100,10 @@ Názvy entit:
 
 ## Známé omezení
 
-- Data jsou dostupná pouze pro vybrané stanice v České republice
+- Data jsou dostupná pouze pro stanice dostupné na PočasíMeteo.cz
 - Aktualizace probíhá každou hodinu (limitováno API)
 - Některé modely nemusí být vždy dostupné (závisí na API)
+- Název stanice musí odpovídat URL formátu na PočasíMeteo.cz (např. praha-6-ruzyne)
 
 ## Podpora
 
@@ -118,7 +117,7 @@ Tento projekt je licencován pod MIT licencí - viz [LICENSE](LICENSE) soubor pr
 
 ## Upozornění
 
-Tato integrace není oficiálně podporována ani schvalována provozovateli PočasíMeteo.cz ani Českým hydrometeorologickým ústavem (ČHMÚ).
+Tato integrace není oficiálně podporována ani schvalována provozovateli PočasíMeteo.cz.
 
 ---
 
