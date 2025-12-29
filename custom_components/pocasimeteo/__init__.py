@@ -17,11 +17,12 @@ PLATFORMS = [Platform.WEATHER]
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     """Set up the PočasíMeteo component."""
     # Register frontend resources for Lovelace card
-    hass.http.register_static_path(
-        "/hacsfiles/pocasimeteo",
-        str(Path(__file__).parent / "www"),
-        cache_headers=False,
-    )
+    hass.http.async_register_static_paths([
+        {
+            "url_path": "/hacsfiles/pocasimeteo",
+            "path": str(Path(__file__).parent / "www"),
+        }
+    ])
     return True
 
 
