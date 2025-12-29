@@ -12,15 +12,14 @@ Home Assistant integrace pro meteorologická data z [PočasíMeteo.cz](https://w
   - Zadejte název stanice dostupné na PočasíMeteo.cz
   - Např.: praha-6-ruzyne, brno, ostrava, plzen, liberec, olomouc, atd.
 
-- **8 meteorologických modelů:**
+- **7 meteorologických modelů:**
   - MASTER (Ensemble)
   - ALADIN
-  - ICON
+  - ICONDE (ICON)
+  - ICONEU (COSMO)
+  - YRno
   - GFS
-  - ECMWF
   - WRF
-  - COSMO
-  - ARPEGE
 
 - **Předpověď:**
   - Hodinová předpověď (48 hodin)
@@ -72,6 +71,66 @@ Home Assistant integrace pro meteorologická data z [PočasíMeteo.cz](https://w
 5. Vyberte preferovaný model předpovědi (výchozí: MASTER)
 6. Dokončete konfiguraci
 
+## Lovelace Custom Card
+
+Integrace obsahuje pokročilou Lovelace custom card s podporou více modelů a srovnáním přesnosti.
+
+### Instalace card
+
+1. **Přidání resource** (po instalaci přes HACS):
+   - Přejděte do **Nastavení** → **Dashboardy** → **Resources**
+   - Klikněte na **+ PŘIDAT RESOURCE**
+   - URL: `/hacsfiles/pocasimeteo/pocasimeteo-card.js`
+   - Typ: **JavaScript Module**
+   - Klikněte na **VYTVOŘIT**
+
+2. **Refresh browser cache**: Stiskněte `Ctrl+F5` nebo `Cmd+Shift+R`
+
+### Použití card
+
+```yaml
+type: custom:pocasimeteo-card
+entity: weather.pocasimeteo_praha_6_ruzyne
+models:
+  - name: MASTER
+    label: MASTER
+  - name: ALADIN
+    label: ALADIN
+  - name: ICON
+    label: ICONDE
+  - name: COSMO
+    label: ICONEU
+  - name: YRno
+    label: YRno
+  - name: GFS
+    label: GFS
+  - name: WRF
+    label: WRF
+```
+
+### Pokročilá konfigurace
+
+```yaml
+type: custom:pocasimeteo-card
+entity: weather.pocasimeteo_praha_6_ruzyne
+# Automatický výběr nejpřesnějšího modelu podle reference entity
+best_match_temperature_entity: sensor.venku_teplota
+# Zobrazení rozdílu oproti reference
+temperature_entity: sensor.venku_teplota
+humidity_entity: sensor.venku_vlhkost
+wind_speed_entity: sensor.venku_vitr
+# Vlastní pořadí dlaždic
+tile_order:
+  - temperature
+  - humidity
+  - precipitation
+  - icon
+  - wind
+  - wind_gust
+  - wind_direction
+  - pressure
+```
+
 ### Příklad automatizace
 
 ```yaml
@@ -90,13 +149,17 @@ automation:
 
 ## Entity
 
-Integrace vytvoří pro každou nakonfigurovanou stanici:
-- **Hlavní weather entitu** s preferovaným modelem
-- **Dodatečné weather entity** pro všechny dostupné modely (pokud je API vrací)
+Integrace vytvoří pro každou nakonfigurovanou stanici **7 weather entit** (jednu pro každý model):
 
-Názvy entit:
-- Hlavní: `weather.pocasimeteo_<stanice>`
-- Další modely: `weather.pocasimeteo_<stanice>_<model>`
+- **Primární entita** (MASTER): `weather.pocasimeteo_<stanice>`
+- **ALADIN**: `weather.pocasimeteo_<stanice>_aladin`
+- **ICONDE**: `weather.pocasimeteo_<stanice>_icon`
+- **ICONEU**: `weather.pocasimeteo_<stanice>_cosmo`
+- **YRno**: `weather.pocasimeteo_<stanice>_yrno`
+- **GFS**: `weather.pocasimeteo_<stanice>_gfs`
+- **WRF**: `weather.pocasimeteo_<stanice>_wrf`
+
+Všechny entity jsou dostupné pro použití v dashboard a automatizacích.
 
 ## Známé omezení
 
