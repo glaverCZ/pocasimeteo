@@ -77,12 +77,16 @@ Integrace obsahuje pokročilou Lovelace custom card s podporou více modelů a s
 
 ### Instalace card
 
-Card se **přidává automaticky do Lovelace resources** při instalaci nebo aktualizaci integrace. Není potřeba žádných manuálních kroků.
+Po instalaci integrace je nutné **manuálně přidat card jako Lovelace resource**:
 
-> **Důležité:**
-> - Po instalaci/aktualizaci **restartujte Home Assistant**
-> - Po restartu proveďte **hard refresh** (`Ctrl+F5` nebo `Cmd+Shift+R`) v prohlížeči
-> - Card se automaticky objeví v seznamu Lovelace resources (Nastavení → Dashboardy → Resources)
+1. Otevřete **Nastavení** → **Dashboardy** → **⋮** (tři tečky vpravo nahoře) → **Resources**
+2. Klikněte na **+ PŘIDAT RESOURCE**
+3. Zadejte URL: `/hacsfiles/pocasimeteo/pocasimeteo-card.js`
+4. Typ: **JavaScript Module**
+5. Klikněte na **VYTVOŘIT**
+6. Proveďte **hard refresh** v prohlížeči (`Ctrl+F5` nebo `Cmd+Shift+R`)
+
+> **Tip:** Tento krok je potřeba provést pouze jednou po první instalaci.
 
 ### Použití card
 
