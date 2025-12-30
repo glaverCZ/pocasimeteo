@@ -16,15 +16,9 @@ PLATFORMS = [Platform.WEATHER]
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     """Set up the PočasíMeteo component."""
-    return True
-
-
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Set up PočasíMeteo from a config entry."""
-    _LOGGER.info("▶ Setting up PočasíMeteo integration")
-
     # Install Lovelace card to www/community/pocasimeteo-card/
     # HACS doesn't copy www/ folder from integrations, so we download it from GitHub
+    # This runs on every HA restart to ensure card is always available
     try:
         import aiohttp
         import shutil
@@ -118,6 +112,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         _LOGGER.error("POCASIMETEO CARD INSTALLATION FAILED!")
         _LOGGER.error("=" * 80)
         _LOGGER.error("✗ Error: %s", err, exc_info=True)
+
+    return True
+
+
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Set up PočasíMeteo from a config entry."""
+    _LOGGER.info("▶ Setting up PočasíMeteo integration")
 
     try:
         _LOGGER.info("→ Creating coordinator")
