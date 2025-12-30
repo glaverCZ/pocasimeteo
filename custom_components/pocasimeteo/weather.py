@@ -288,7 +288,17 @@ class PocasimeteoWeather(CoordinatorEntity, WeatherEntity):
         for item in hourly_data[:48]:  # 48 hodin dopředu
             try:
                 dt = datetime.strptime(item["Dat"], "%m/%d/%y %H:%M:%S")
-                icon_code = item.get("Ik", "").split(".")[0][:2]
+                raw_ik = item.get("Ik", "")
+
+                # Normalizuj icon_code: odstraň .png, pro číselné kódy vezmi jen první 2 znaky
+                if raw_ik:
+                    icon_code = raw_ik.split(".")[0]  # Remove .png
+                    if icon_code and icon_code[0].isdigit() and len(icon_code) > 2:
+                        # Číselný kód s d/n suffixem: "01d" → "01", "46n" → "46"
+                        icon_code = icon_code[:2]
+                    # Textový kód (skoro_zatazeno, mlha, atd.): nechej celý
+                else:
+                    icon_code = ""
 
                 forecast = {
                     ATTR_FORECAST_TIME: dt.isoformat(),
@@ -324,7 +334,17 @@ class PocasimeteoWeather(CoordinatorEntity, WeatherEntity):
         for item in daily_data[:7]:  # 7 dní dopředu
             try:
                 dt = datetime.strptime(item["Dat_dne"], "%m/%d/%y %H:%M:%S")
-                icon_code = item.get("IkD", "").split(".")[0][:2]
+                raw_ikd = item.get("IkD", "")
+
+                # Normalizuj icon_code: odstraň .png, pro číselné kódy vezmi jen první 2 znaky
+                if raw_ikd:
+                    icon_code = raw_ikd.split(".")[0]  # Remove .png
+                    if icon_code and icon_code[0].isdigit() and len(icon_code) > 2:
+                        # Číselný kód s d/n suffixem: "01d" → "01", "46n" → "46"
+                        icon_code = icon_code[:2]
+                    # Textový kód (skoro_zatazeno, mlha, atd.): nechej celý
+                else:
+                    icon_code = ""
 
                 forecast = {
                     ATTR_FORECAST_TIME: dt.isoformat(),
