@@ -19,8 +19,8 @@ PRAGUE_TIMEZONE = ZoneInfo("Europe/Prague")
 WEATHER_MODELS = {
     "MASTER": {"label": "MASTER", "file": "MASTER_data.json"},
     "ALADIN": {"label": "ALADIN", "file": "ALADIN_data.json"},
-    "ICON": {"label": "ICONDE", "file": "ICON_data.json"},
-    "COSMO": {"label": "ICONEU", "file": "COSMO_data.json"},
+    "ICON": {"label": "ICONEU", "file": "ICON_data.json"},  # ICON_data.json = ICON-EU (evropský)
+    "COSMO": {"label": "ICONDE", "file": "COSMO_data.json"},  # COSMO_data.json = ICON-DE (německý)
     "YRno": {"label": "YRno", "file": "YRno_data.json"},
     "GFS": {"label": "GFS", "file": "GFS_data.json"},
     "WRF": {"label": "WRF", "file": "WRF_data.json"},

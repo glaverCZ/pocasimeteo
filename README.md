@@ -130,8 +130,8 @@ Po nastavení integrace se vytvoří **7 weather entit** (jedna pro každý mode
 ```
 weather.pocasimeteo_<stanice>          ← MASTER (primární)
 weather.pocasimeteo_<stanice>_aladin   ← ALADIN
-weather.pocasimeteo_<stanice>_icon     ← ICONDE
-weather.pocasimeteo_<stanice>_cosmo    ← ICONEU
+weather.pocasimeteo_<stanice>_icon     ← ICONEU
+weather.pocasimeteo_<stanice>_cosmo    ← ICONDE
 weather.pocasimeteo_<stanice>_yrno     ← YRno
 weather.pocasimeteo_<stanice>_gfs      ← GFS
 weather.pocasimeteo_<stanice>_wrf      ← WRF
