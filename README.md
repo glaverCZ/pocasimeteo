@@ -1,109 +1,121 @@
-# PočasíMeteo
+# ☀️ PočasíMeteo pro Home Assistant
 
-[![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/integration)
+[![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg)](https://github.com/hacs/integration)
 [![GitHub release](https://img.shields.io/github/release/glaverCZ/pocasimeteo.svg)](https://github.com/glaverCZ/pocasimeteo/releases)
 [![License](https://img.shields.io/github/license/glaverCZ/pocasimeteo.svg)](LICENSE)
 
-Home Assistant integrace pro meteorologická data z [PočasíMeteo.cz](https://www.pocasimeteo.cz/).
+Integrace pro zobrazení předpovědi počasí z [PočasíMeteo.cz](https://www.pocasimeteo.cz/) v Home Assistant.
 
-## Funkce
+---
 
-- **Libovolná meteorologická stanice:**
-  - Zadejte název stanice dostupné na PočasíMeteo.cz
-  - Např.: praha-6-ruzyne, brno, ostrava, plzen, liberec, olomouc, atd.
+## ✨ Co tato integrace umí
 
-- **7 meteorologických modelů:**
-  - MASTER (Ensemble)
-  - ALADIN
-  - ICONDE (ICON)
-  - ICONEU (COSMO)
-  - YRno
-  - GFS
-  - WRF
+### 📊 7 meteorologických modelů
+- **MASTER** - Souhrnný model (ensemble)
+- **ALADIN** - Nejlepší pro krátkodobou předpověď (0-24h)
+- **ICONDE** - Model ICON-DE
+- **ICONEU** - Model ICON-EU (dříve COSMO)
+- **YRno** - Norský model
+- **GFS** - Americký globální model
+- **WRF** - Model WRF
 
-- **Předpověď:**
-  - Hodinová předpověď (48 hodin)
-  - Denní předpověď (7 dní)
+### 🌤️ Předpověď
+- ⏰ **Hodinová předpověď** - až 48 hodin dopředu
+- 📅 **Denní předpověď** - až 7 dní dopředu
 
-- **Aktuální podmínky:**
-  - Teplota
-  - Vlhkost
-  - Tlak
-  - Rychlost a směr větru
-  - Stav počasí
+### 📍 Libovolná stanice
+Podporuje všechny meteorologické stanice dostupné na PočasíMeteo.cz:
+- Praha, Brno, Ostrava, Plzeň, Liberec...
+- Více než 100 lokalit po celé ČR
 
-- **Doplňující atributy:**
-  - Oblačnost
-  - Pravděpodobnost srážek
-  - Sníh
-  - Poryvy větru
-  - Směr větru (text)
+### 🔄 Automatická aktualizace
+Data se aktualizují automaticky každou hodinu.
 
-- **Automatická aktualizace:** Každou hodinu
+---
 
-## Instalace
+## 📦 Instalace
 
-### Krok 1: Instalace integrace
+### Metoda 1: HACS (doporučeno)
 
-#### HACS (doporučeno)
-
-1. Otevřete HACS v Home Assistant
-2. Přejděte do sekce **"Integrations"**
-3. Klikněte na **+ EXPLORE & DOWNLOAD REPOSITORIES**
+1. Otevřete **HACS** v Home Assistant
+2. Klikněte na **Integrations**
+3. Klikněte na **⊕ Explore & Download Repositories**
 4. Vyhledejte **"PočasíMeteo"**
 5. Klikněte na **Download**
 6. **Restartujte Home Assistant**
 
-#### Manuální instalace
+### Metoda 2: Manuální instalace
 
-1. Zkopírujte složku `custom_components/pocasimeteo` do vaší `config/custom_components/` složky v Home Assistant
-2. **Restartujte Home Assistant**
+1. Stáhněte nejnovější verzi z [Releases](https://github.com/glaverCZ/pocasimeteo/releases)
+2. Rozbalte a zkopírujte složku `custom_components/pocasimeteo` do `config/custom_components/`
+3. **Restartujte Home Assistant**
 
-### Krok 2: Konfigurace integrace
+---
 
-1. Přejděte do **Nastavení** → **Zařízení a služby** → **+ PŘIDAT INTEGRACI**
-2. Vyhledejte **"PočasíMeteo"**
-3. Zadejte název stanice (např. praha-6-ruzyne)
-4. Vyberte preferovaný model předpovědi (výchozí: MASTER)
-5. Dokončete konfiguraci
+## ⚙️ Konfigurace
 
-### Krok 3: Instalace Lovelace Card (volitelné, ale doporučeno)
+Po instalaci:
 
-Pro zobrazení počasí s pokročilými funkcemi nainstalujte [PočasíMeteo Card](https://github.com/glaverCZ/pocasimeteo-card):
+1. Přejděte do **⚙️ Nastavení** → **Zařízení a služby**
+2. Klikněte na **➕ Přidat integraci**
+3. Vyhledejte **"PočasíMeteo"**
+4. Zadejte **název stanice** (např. `praha-6-ruzyne`)
+5. Vyberte **preferovaný model** (doporučujeme MASTER)
+6. Dokončete nastavení
 
-1. Otevřete HACS v Home Assistant
-2. Přejděte do sekce **"Frontend"**
-3. Klikněte na **+ EXPLORE & DOWNLOAD REPOSITORIES**
-4. Vyhledejte **"PočasíMeteo Card"**
-5. Klikněte na **Download**
-6. **Restartujte Home Assistant**
-7. **Smažte browser cache** (Ctrl+F5 nebo Cmd+Shift+R)
+### 🗺️ Jak najít název stanice?
 
-## Konfigurace
+1. Jděte na [PočasíMeteo.cz](https://www.pocasimeteo.cz/)
+2. Najděte svoji lokalitu
+3. URL adresa obsahuje název - např. `https://www.pocasimeteo.cz/predpoved/cr/praha-6-ruzyne`
+4. Použijte část za posledním lomítkem: `praha-6-ruzyne`
 
-### Prostřednictvím UI
+---
 
-1. Přejděte do **Nastavení** → **Zařízení a služby**
-2. Klikněte na tlačítko **+ PŘIDAT INTEGRACI**
-3. Vyhledejte **PočasíMeteo**
-4. Zadejte název meteorologické stanice (např. praha-6-ruzyne)
-5. Vyberte preferovaný model předpovědi (výchozí: MASTER)
-6. Dokončete konfiguraci
+## 🎨 Pokročilá vizualizace (volitelné)
 
-## Lovelace Custom Card
+Pro krásné zobrazení s grafy a pokročilými funkcemi nainstalujte **[PočasíMeteo Card](https://github.com/glaverCZ/pocasimeteo-card)**:
 
-Pro pokročilé zobrazení počasí s podporou více modelů a srovnáním přesnosti nainstalujte **[PočasíMeteo Card](https://github.com/glaverCZ/pocasimeteo-card)** (samostatný repozitář).
+### Co umí card?
 
-Card nabízí:
-- Podporu všech 7 meteorologických modelů
-- Automatický výběr nejpřesnějšího modelu
-- Srovnání předpovědi s aktuálními hodnotami
-- Vlastní pořadí dlaždic
-- 125+ PNG ikon počasí
+- 📊 **Interaktivní grafy** předpovědi
+- 🔄 **Přepínání mezi modely** jedním kliknutím
+- 🎯 **Automatický výběr nejpřesnějšího modelu**
+- 🌈 **125+ barevných PNG ikon počasí**
+- 📐 **Vlastní rozložení** dlaždic
 
-Pro instalaci a dokumentaci viz **https://github.com/glaverCZ/pocasimeteo-card**
+### Instalace card
 
-### Příklad automatizace
+1. Otevřete **HACS** → **Frontend**
+2. Klikněte na **⊕ Explore & Download Repositories**
+3. Vyhledejte **"PočasíMeteo Card"**
+4. Klikněte na **Download**
+5. **Restartujte Home Assistant**
+6. **Smažte cache prohlížeče** (Ctrl+F5)
+
+Kompletní dokumentace: **https://github.com/glaverCZ/pocasimeteo-card**
+
+---
+
+## 📱 Entity
+
+Po nastavení integrace se vytvoří **7 weather entit** (jedna pro každý model):
+
+```
+weather.pocasimeteo_<stanice>          ← MASTER (primární)
+weather.pocasimeteo_<stanice>_aladin   ← ALADIN
+weather.pocasimeteo_<stanice>_icon     ← ICONDE
+weather.pocasimeteo_<stanice>_cosmo    ← ICONEU
+weather.pocasimeteo_<stanice>_yrno     ← YRno
+weather.pocasimeteo_<stanice>_gfs      ← GFS
+weather.pocasimeteo_<stanice>_wrf      ← WRF
+```
+
+Všechny entity můžete používat v dashboardech, automatizacích a skriptech.
+
+---
+
+## 🤖 Příklad automatizace
 
 ```yaml
 automation:
@@ -116,44 +128,53 @@ automation:
     action:
       - service: notify.mobile_app
         data:
-          message: "Dnes bude pravděpodobně pršet ({{ state_attr('weather.pocasimeteo_praha_6_ruzyne', 'precipitation_probability') }}%)"
+          message: >
+            🌧️ Dnes bude pravděpodobně pršet!
+            Pravděpodobnost: {{ state_attr('weather.pocasimeteo_praha_6_ruzyne', 'precipitation_probability') }}%
 ```
-
-## Entity
-
-Integrace vytvoří pro každou nakonfigurovanou stanici **7 weather entit** (jednu pro každý model):
-
-- **Primární entita** (MASTER): `weather.pocasimeteo_<stanice>`
-- **ALADIN**: `weather.pocasimeteo_<stanice>_aladin`
-- **ICONDE**: `weather.pocasimeteo_<stanice>_icon`
-- **ICONEU**: `weather.pocasimeteo_<stanice>_cosmo`
-- **YRno**: `weather.pocasimeteo_<stanice>_yrno`
-- **GFS**: `weather.pocasimeteo_<stanice>_gfs`
-- **WRF**: `weather.pocasimeteo_<stanice>_wrf`
-
-Všechny entity jsou dostupné pro použití v dashboard a automatizacích.
-
-## Známé omezení
-
-- Data jsou dostupná pouze pro stanice dostupné na PočasíMeteo.cz
-- Aktualizace probíhá každou hodinu (limitováno API)
-- Některé modely nemusí být vždy dostupné (závisí na API)
-- Název stanice musí odpovídat URL formátu na PočasíMeteo.cz (např. praha-6-ruzyne)
-
-## Podpora
-
-Máte-li problém nebo nápad na vylepšení:
-- [Vytvořte issue](https://github.com/glaverCZ/pocasimeteo/issues)
-- [Přispějte kódem](https://github.com/glaverCZ/pocasimeteo/pulls)
-
-## Licence
-
-Tento projekt je licencován pod MIT licencí - viz [LICENSE](LICENSE) soubor pro detaily.
-
-## Upozornění
-
-Tato integrace není oficiálně podporována ani schvalována provozovateli PočasíMeteo.cz.
 
 ---
 
-**Vytvořeno pro Home Assistant komunitu**
+## ℹ️ Důležité informace
+
+### Omezení
+- Data jsou dostupná pouze pro stanice na PočasíMeteo.cz
+- Aktualizace každou hodinu (omezení API)
+- Některé modely nemusí být vždy dostupné
+
+### Atributy entit
+Každá weather entita obsahuje:
+- 🌡️ Teplota, vlhkost, tlak
+- 💨 Rychlost a směr větru, poryvy
+- ☁️ Oblačnost, srážky, sníh
+- 🕐 Čas poslední aktualizace
+
+---
+
+## 🆘 Podpora
+
+### Našli jste chybu nebo máte nápad?
+- [📝 Vytvořte issue](https://github.com/glaverCZ/pocasimeteo/issues)
+- [💻 Přispějte kódem](https://github.com/glaverCZ/pocasimeteo/pulls)
+
+### Odkazy
+- **Frontend card:** [glaverCZ/pocasimeteo-card](https://github.com/glaverCZ/pocasimeteo-card)
+- **PočasíMeteo.cz:** [www.pocasimeteo.cz](https://www.pocasimeteo.cz/)
+
+---
+
+## 📄 Licence
+
+MIT License - viz [LICENSE](LICENSE) soubor.
+
+## ⚠️ Upozornění
+
+Tato integrace není oficiálně podporována provozovateli PočasíMeteo.cz. Jedná se o neoficiální komunitní projekt.
+
+---
+
+<div align="center">
+
+**Vytvořeno pro českou Home Assistant komunitu** ❤️
+
+</div>
