@@ -43,7 +43,9 @@ Home Assistant integrace pro meteorologická data z [PočasíMeteo.cz](https://w
 
 ## Instalace
 
-### HACS (doporučeno)
+### Krok 1: Instalace integrace
+
+#### HACS (doporučeno)
 
 1. Otevřete HACS v Home Assistant
 2. Přejděte do sekce **"Integrations"**
@@ -51,20 +53,31 @@ Home Assistant integrace pro meteorologická data z [PočasíMeteo.cz](https://w
 4. Vyhledejte **"PočasíMeteo"**
 5. Klikněte na **Download**
 6. **Restartujte Home Assistant**
-7. Přidejte integraci:
-   - **Nastavení** → **Zařízení a služby** → **+ PŘIDAT INTEGRACI**
-   - Vyhledejte **"PočasíMeteo"**
-   - Zadejte název stanice (např. praha-6-ruzyne)
-8. **Smažte browser cache** (Ctrl+F5 nebo Cmd+Shift+R)
 
-> **Poznámka:** Lovelace card se automaticky načte při přidání integrace. Není potřeba manuálně přidávat resource ani kopírovat soubory.
-
-### Manuální instalace (bez HACS)
+#### Manuální instalace
 
 1. Zkopírujte složku `custom_components/pocasimeteo` do vaší `config/custom_components/` složky v Home Assistant
 2. **Restartujte Home Assistant**
-3. Přidejte integraci přes UI (viz bod 7 výše)
-4. **Smažte browser cache** (Ctrl+F5 nebo Cmd+Shift+R)
+
+### Krok 2: Konfigurace integrace
+
+1. Přejděte do **Nastavení** → **Zařízení a služby** → **+ PŘIDAT INTEGRACI**
+2. Vyhledejte **"PočasíMeteo"**
+3. Zadejte název stanice (např. praha-6-ruzyne)
+4. Vyberte preferovaný model předpovědi (výchozí: MASTER)
+5. Dokončete konfiguraci
+
+### Krok 3: Instalace Lovelace Card (volitelné, ale doporučeno)
+
+Pro zobrazení počasí s pokročilými funkcemi nainstalujte [PočasíMeteo Card](https://github.com/glaverCZ/pocasimeteo-card):
+
+1. Otevřete HACS v Home Assistant
+2. Přejděte do sekce **"Frontend"**
+3. Klikněte na **+ EXPLORE & DOWNLOAD REPOSITORIES**
+4. Vyhledejte **"PočasíMeteo Card"**
+5. Klikněte na **Download**
+6. **Restartujte Home Assistant**
+7. **Smažte browser cache** (Ctrl+F5 nebo Cmd+Shift+R)
 
 ## Konfigurace
 
@@ -79,52 +92,16 @@ Home Assistant integrace pro meteorologická data z [PočasíMeteo.cz](https://w
 
 ## Lovelace Custom Card
 
-Integrace obsahuje pokročilou Lovelace custom card s podporou více modelů a srovnáním přesnosti. Po instalaci card (viz instrukce výše) ji můžete použít v dashboard.
+Pro pokročilé zobrazení počasí s podporou více modelů a srovnáním přesnosti nainstalujte **[PočasíMeteo Card](https://github.com/glaverCZ/pocasimeteo-card)** (samostatný repozitář).
 
-### Použití card
+Card nabízí:
+- Podporu všech 7 meteorologických modelů
+- Automatický výběr nejpřesnějšího modelu
+- Srovnání předpovědi s aktuálními hodnotami
+- Vlastní pořadí dlaždic
+- 125+ PNG ikon počasí
 
-```yaml
-type: custom:pocasimeteo-card
-entity: weather.pocasimeteo_praha_6_ruzyne
-models:
-  - name: MASTER
-    label: MASTER
-  - name: ALADIN
-    label: ALADIN
-  - name: ICON
-    label: ICONDE
-  - name: COSMO
-    label: ICONEU
-  - name: YRno
-    label: YRno
-  - name: GFS
-    label: GFS
-  - name: WRF
-    label: WRF
-```
-
-### Pokročilá konfigurace
-
-```yaml
-type: custom:pocasimeteo-card
-entity: weather.pocasimeteo_praha_6_ruzyne
-# Automatický výběr nejpřesnějšího modelu podle reference entity
-best_match_temperature_entity: sensor.venku_teplota
-# Zobrazení rozdílu oproti reference
-temperature_entity: sensor.venku_teplota
-humidity_entity: sensor.venku_vlhkost
-wind_speed_entity: sensor.venku_vitr
-# Vlastní pořadí dlaždic
-tile_order:
-  - temperature
-  - humidity
-  - precipitation
-  - icon
-  - wind
-  - wind_gust
-  - wind_direction
-  - pressure
-```
+Pro instalaci a dokumentaci viz **https://github.com/glaverCZ/pocasimeteo-card**
 
 ### Příklad automatizace
 
