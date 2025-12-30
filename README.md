@@ -143,20 +143,36 @@ Všechny entity můžete používat v dashboardech, automatizacích a skriptech.
 
 ## 🤖 Příklad automatizace
 
+### Upozornění na déšť
+
+**Pro configuration.yaml:**
+
 ```yaml
-automation:
-  - alias: "Upozornění na déšť"
-    trigger:
-      - platform: numeric_state
-        entity_id: weather.pocasimeteo_praha_6_ruzyne
-        attribute: precipitation_probability
-        above: 70
-    action:
-      - service: notify.mobile_app
-        data:
-          message: >
-            🌧️ Dnes bude pravděpodobně pršet!
-            Pravděpodobnost: {{ state_attr('weather.pocasimeteo_praha_6_ruzyne', 'precipitation_probability') }}%
+- alias: "Upozornění na déšť"
+  trigger:
+    - platform: numeric_state
+      entity_id: weather.pocasimeteo_praha_6_ruzyne
+      attribute: precipitation_probability
+      above: 70
+  action:
+    - service: notify.mobile_app
+      data:
+        message: "🌧️ Dnes bude pravděpodobně pršet! Pravděpodobnost: {{ state_attr('weather.pocasimeteo_praha_6_ruzyne', 'precipitation_probability') }}%"
+```
+
+**Pro UI editor** (⚙️ Nastavení → Automatizace a scény → ➕ Vytvořit automatizaci → Upravit v YAML):
+
+```yaml
+alias: Upozornění na déšť
+trigger:
+  - platform: numeric_state
+    entity_id: weather.pocasimeteo_praha_6_ruzyne
+    attribute: precipitation_probability
+    above: 70
+action:
+  - service: notify.mobile_app
+    data:
+      message: "🌧️ Dnes bude pravděpodobně pršet! Pravděpodobnost: {{ state_attr('weather.pocasimeteo_praha_6_ruzyne', 'precipitation_probability') }}%"
 ```
 
 ---
