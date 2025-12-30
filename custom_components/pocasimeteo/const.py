@@ -48,17 +48,95 @@ DATA_STALE_UPDATE_INTERVAL_MINUTES = 5
 ICON_CODE_MAP = {}
 
 # Mapování kódů počasí na HA podmínky
+# Podporuje jak číselné kódy (01, 46, atd.) tak textové názvy ikon
 CONDITION_MAP = {
-    "01": "sunny",
-    "02": "partlycloudy",
-    "03": "cloudy",
-    "04": "cloudy",
-    "09": "rainy",
-    "10": "rainy",
-    "11": "lightning-rainy",
-    "13": "snowy",
-    "46": "rainy",
-    "50": "fog",
+    # Číselné kódy (standardní ČHMÚ)
+    "01": "sunny",           # Jasno
+    "02": "partlycloudy",    # Polojasno
+    "03": "cloudy",          # Oblačno
+    "04": "cloudy",          # Zataženo
+    "05": "fog",             # Mlha
+    "06": "rainy",           # Déšť
+    "07": "snowy",           # Sníh
+    "08": "snowy",           # Déšť se sněhem
+    "09": "rainy",           # Přeháňky
+    "10": "rainy",           # Déšť
+    "11": "lightning-rainy", # Bouřky
+    "12": "snowy",           # Sněžení
+    "13": "snowy",           # Sníh
+    "14": "snowy",           # Sněžení
+    "15": "snowy",           # Sněhové přeháňky
+    "20": "cloudy",          # Skoro zataženo
+    "21": "cloudy",          # Skoro zataženo
+    "22": "rainy",           # Déšť
+    "23": "snowy",           # Sníh
+    "24": "rainy",           # Přeháňky
+    "25": "rainy",           # Přeháňky
+    "26": "lightning-rainy", # Bouřky
+    "27": "lightning-rainy", # Bouřky
+    "28": "snowy",           # Sněžení
+    "29": "snowy",           # Sněžení
+    "30": "rainy",           # Déšť
+    "31": "snowy",           # Sníh
+    "32": "snowy",           # Sníh
+    "33": "snowy",           # Sníh
+    "34": "snowy",           # Sníh
+    "40": "fog",             # Mlha
+    "41": "fog",             # Mlha
+    "42": "fog",             # Mlha
+    "43": "fog",             # Mlha
+    "44": "fog",             # Mlha
+    "45": "fog",             # Mlha
+    "46": "rainy",           # Déšť
+    "47": "rainy",           # Déšť
+    "48": "snowy",           # Sníh
+    "49": "snowy",           # Sníh
+    "50": "fog",             # Mlha
+    "60": "rainy",           # Mírný déšť
+    "61": "rainy",           # Déšť
+    "62": "rainy",           # Silný déšť
+    "63": "rainy",           # Déšť
+    "64": "rainy",           # Déšť
+    "65": "rainy",           # Silný déšť
+    "66": "snowy",           # Déšť se sněhem
+    "67": "snowy",           # Déšť se sněhem
+    "68": "snowy",           # Déšť se sněhem
+    "70": "snowy",           # Mírné sněžení
+    "71": "snowy",           # Sněžení
+    "72": "snowy",           # Silné sněžení
+    "73": "snowy",           # Sněžení
+    "74": "snowy",           # Sněžení
+    "75": "snowy",           # Silné sněžení
+    "76": "snowy",           # Sněhové zrna
+    "77": "snowy",           # Sněhové vločky
+    "78": "snowy",           # Sněhové krystalky
+
+    # Textové názvy ikon (pro WRF a další modely)
+    "clear_day": "sunny",
+    "clear_night": "clear-night",
+    "partly_cloudy_day": "partlycloudy",
+    "partly_cloudy_night": "partlycloudy",
+    "cloudy": "cloudy",
+    "fog": "fog",
+    "mlha": "fog",
+    "mlha-dest": "rainy",
+    "mlha-snih": "snowy",
+    "rain": "rainy",
+    "snow": "snowy",
+    "sleet": "snowy",
+    "polojasno-destova-prehanka": "rainy",
+    "polojasno-snezeni": "snowy",
+    "skoro_zatazeno": "cloudy",
+    "skoro_zatazeno_dest_1": "rainy",
+    "skoro_zatazeno_dest_2": "rainy",
+    "skoro_zatazeno_dest_se_snehem": "snowy",
+    "skoro_zatazeno_snezeni_1": "snowy",
+    "skoro_zatazeno_snezeni_2": "snowy",  # ← TEN Z VAŠEHO PŘÍKLADU
+    "skoro_zatazeno_bourka_d": "lightning-rainy",
+    "skoro_zatazeno_bourka_n": "lightning-rainy",
+    "oblacno_bourka_d": "lightning-rainy",
+    "oblacno_bourka_n": "lightning-rainy",
+    "zatazeno_bourka": "lightning-rainy",
 }
 
 
