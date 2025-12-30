@@ -70,6 +70,32 @@ Po instalaci:
 3. URL adresa obsahuje název - např. `https://www.pocasimeteo.cz/predpoved/cr/praha-6-ruzyne`
 4. Použijte část za posledním lomítkem: `praha-6-ruzyne`
 
+### 🔧 Pokročilá nastavení (volitelné)
+
+Po přidání integrace můžete konfigurovat **referenční senzory** pro sledování přesnosti modelů:
+
+1. Přejděte do **⚙️ Nastavení** → **Zařízení a služby**
+2. Najděte **PočasíMeteo** integraci
+3. Klikněte na **KONFIGUROVAT**
+
+**Dostupné referenční entity:**
+
+| Parametr | Popis | Příklad entity |
+|----------|-------|----------------|
+| **Reference Temperature Entity** | Venkovní teplotní senzor pro sledování přesnosti modelů | `sensor.venku_teplota` |
+| **Reference Humidity Entity** | Venkovní vlhkostní senzor | `sensor.venku_vlhkost` |
+| **Reference Wind Entity** | Senzor rychlosti větru | `sensor.venku_vitr` |
+| **Reference Wind Gust Entity** | Senzor poryvů větru | `sensor.venku_vitr_poryvy` |
+| **Reference Rainfall Entity** | Senzor srážek | `sensor.venku_srazky` |
+| **Reference Pressure Entity** | Senzor atmosférického tlaku | `sensor.venku_tlak` |
+| **Reference Wind Direction Entity** | Senzor směru větru | `sensor.venku_vitr_smer` |
+
+**K čemu slouží referenční senzory?**
+- Integrace porovnává předpověď s vašimi skutečnými hodnotami
+- Automaticky sleduje, který model je nejpřesnější pro vaši lokalitu
+- Data se ukládají do atributů entity pro použití v card nebo automatizacích
+- Card může automaticky vybírat nejpřesnější model
+
 ---
 
 ## 🎨 Pokročilá vizualizace (volitelné)
