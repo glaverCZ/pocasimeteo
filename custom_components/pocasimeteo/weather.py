@@ -402,10 +402,19 @@ class PocasimeteoWeather(CoordinatorEntity, WeatherEntity):
         hourly_data = model_data.get("data", [])
         if hourly_data:
             forecast_hourly = []
+            # Debug: Log první 3 ikony pro tento model
+            icon_samples_logged = 0
+
             for item in hourly_data[:48]:  # 48 hodin dopředu
                 try:
                     dt = datetime.strptime(item["Dat"], "%m/%d/%y %H:%M:%S")
                     api_icon_code = item.get("Ik", "").split(".")[0][:2] if item.get("Ik") else ""
+                    raw_icon = item.get("Ik", "")
+
+                    # Debug: Log sample icons
+                    if icon_samples_logged < 3 and raw_icon:
+                        _LOGGER.info(f"[{self._model}] Icon sample {icon_samples_logged + 1}: Ik='{raw_icon}' → icon_code='{api_icon_code}'")
+                        icon_samples_logged += 1
 
                     forecast = {
                         "datetime": dt.isoformat(),
@@ -415,7 +424,7 @@ class PocasimeteoWeather(CoordinatorEntity, WeatherEntity):
                         "wind_gust": item.get("VN"),
                         "wind_bearing": item.get("VSS"),
                         "condition": CONDITION_MAP.get(api_icon_code, "unknown"),
-                        "icon_code": item.get("Ik", ""),  # Raw ikona z API - frontend si řeší mapování
+                        "icon_code": raw_icon,  # Raw ikona z API - frontend si řeší mapování
                     }
                     forecast_hourly.append(forecast)
                 except (KeyError, ValueError):
