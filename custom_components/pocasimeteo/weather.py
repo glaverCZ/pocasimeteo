@@ -402,19 +402,27 @@ class PocasimeteoWeather(CoordinatorEntity, WeatherEntity):
         hourly_data = model_data.get("data", [])
         if hourly_data:
             forecast_hourly = []
-            # Debug: Log první 3 ikony pro tento model
-            icon_samples_logged = 0
-
             for item in hourly_data[:48]:  # 48 hodin dopředu
                 try:
                     dt = datetime.strptime(item["Dat"], "%m/%d/%y %H:%M:%S")
-                    api_icon_code = item.get("Ik", "").split(".")[0][:2] if item.get("Ik") else ""
-                    raw_icon = item.get("Ik", "")
+                    raw_ik = item.get("Ik", "")
 
-                    # Debug: Log sample icons
-                    if icon_samples_logged < 3 and raw_icon:
-                        _LOGGER.info(f"[{self._model}] Icon sample {icon_samples_logged + 1}: Ik='{raw_icon}' → icon_code='{api_icon_code}'")
-                        icon_samples_logged += 1
+                    # Normalizuj icon_code stejně jako v async_forecast_hourly()
+                    # Odstraň .png a vezmi relevantní část
+                    if raw_ik:
+                        # Split by "." a vezmi první část (odstraní .png)
+                        icon_code = raw_ik.split(".")[0]
+                        # Pokud je to číslo (01, 46, atd.), vezmi jen první 2 znaky
+                        # Pokud je to text (polojasno-dest, mlha, atd.), nechej celé
+                        if icon_code and icon_code[0].isdigit() and len(icon_code) > 2:
+                            # Číselný kód s d/n suffixem: "01d" → "01", "46n" → "46"
+                            api_icon_code = icon_code[:2]
+                        else:
+                            # Textový kód nebo krátký číselný: nechej celý
+                            api_icon_code = icon_code
+                    else:
+                        icon_code = ""
+                        api_icon_code = ""
 
                     forecast = {
                         "datetime": dt.isoformat(),
@@ -424,7 +432,7 @@ class PocasimeteoWeather(CoordinatorEntity, WeatherEntity):
                         "wind_gust": item.get("VN"),
                         "wind_bearing": item.get("VSS"),
                         "condition": CONDITION_MAP.get(api_icon_code, "unknown"),
-                        "icon_code": raw_icon,  # Raw ikona z API - frontend si řeší mapování
+                        "icon_code": icon_code,  # Normalizovaný icon_code bez .png
                     }
                     forecast_hourly.append(forecast)
                 except (KeyError, ValueError):
@@ -440,13 +448,25 @@ class PocasimeteoWeather(CoordinatorEntity, WeatherEntity):
             for item in daily_data[:7]:  # 7 dní dopředu
                 try:
                     dt = datetime.strptime(item["Dat_dne"], "%m/%d/%y %H:%M:%S")
-                    api_icon_code = item.get("IkD", "").split(".")[0][:2] if item.get("IkD") else ""
+                    raw_ikd = item.get("IkD", "")
 
-                    # Mapuj na PNG filename - fallback na "a04" pokud není znám
-                    icon_filename = ICON_CODE_MAP.get(api_icon_code, "a04")
+                    # Normalizuj icon_code stejně jako v hodinové předpovědi
+                    # Odstraň .png a vezmi relevantní část
+                    if raw_ikd:
+                        # Split by "." a vezmi první část (odstraní .png)
+                        icon_code = raw_ikd.split(".")[0]
+                        # Pokud je to číslo (01, 46, atd.), vezmi jen první 2 znaky
+                        # Pokud je to text (polojasno-dest, mlha, atd.), nechej celé
+                        if icon_code and icon_code[0].isdigit() and len(icon_code) > 2:
+                            # Číselný kód s d/n suffixem: "01d" → "01", "46n" → "46"
+                            api_icon_code = icon_code[:2]
+                        else:
+                            # Textový kód nebo krátký číselný: nechej celý
+                            api_icon_code = icon_code
+                    else:
+                        icon_code = ""
+                        api_icon_code = ""
 
-                    # Mapuj IkD přesně tak jak je (s .png, s d/n suffixy)
-                    ikd_value = item.get("IkD", "")
                     forecast = {
                         "datetime": dt.isoformat(),
                         "temperature": item.get("Tmax"),  # Maximální teplota
@@ -455,7 +475,7 @@ class PocasimeteoWeather(CoordinatorEntity, WeatherEntity):
                         "wind_speed_max": item.get("Vmax"),  # Max vítr za den
                         "wind_gust_max": item.get("VNmax"),  # Max poryvy za den
                         "condition": CONDITION_MAP.get(api_icon_code, "unknown"),
-                        "icon_code": ikd_value,  # Raw ikona z API (např. "46.png", "04.png", "01d.png")
+                        "icon_code": icon_code,  # Normalizovaný icon_code bez .png
                     }
                     forecast_daily.append(forecast)
                 except (KeyError, ValueError):
