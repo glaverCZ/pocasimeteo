@@ -23,6 +23,31 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up PočasíMeteo from a config entry."""
     _LOGGER.info("▶ Setting up PočasíMeteo integration")
 
+    # Servíruj card přímo z integrace
+    try:
+        from homeassistant.components.http import StaticPathConfig
+
+        card_dir = Path(__file__).parent / "www"
+        _LOGGER.info("→ Registering static path for card: %s", card_dir)
+
+        # Registruj /local/pocasimeteo/ → custom_components/pocasimeteo/www/
+        await hass.http.async_register_static_paths([
+            StaticPathConfig(
+                url_path="/local/pocasimeteo",
+                path=str(card_dir),
+                cache_headers=False
+            )
+        ])
+
+        # Automaticky načti card do frontendu
+        hass.components.frontend.add_extra_js_url(
+            hass, "/local/pocasimeteo/pocasimeteo-card.js"
+        )
+
+        _LOGGER.info("✓ Card registered at /local/pocasimeteo/pocasimeteo-card.js")
+    except Exception as err:
+        _LOGGER.error("Failed to register card: %s", err, exc_info=True)
+
     try:
         _LOGGER.info("→ Creating coordinator")
         coordinator = PocasimeteoDataUpdateCoordinator(hass, entry)

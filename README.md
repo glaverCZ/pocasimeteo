@@ -43,7 +43,7 @@ Home Assistant integrace pro meteorologická data z [PočasíMeteo.cz](https://w
 
 ## Instalace
 
-### Krok 1: Instalace integrace přes HACS (doporučeno)
+### HACS (doporučeno)
 
 1. Otevřete HACS v Home Assistant
 2. Přejděte do sekce **"Integrations"**
@@ -51,38 +51,20 @@ Home Assistant integrace pro meteorologická data z [PočasíMeteo.cz](https://w
 4. Vyhledejte **"PočasíMeteo"**
 5. Klikněte na **Download**
 6. **Restartujte Home Assistant**
+7. Přidejte integraci:
+   - **Nastavení** → **Zařízení a služby** → **+ PŘIDAT INTEGRACI**
+   - Vyhledejte **"PočasíMeteo"**
+   - Zadejte název stanice (např. praha-6-ruzyne)
+8. **Smažte browser cache** (Ctrl+F5 nebo Cmd+Shift+R)
 
-### Krok 2: Instalace Lovelace card (NUTNÉ pro zobrazení počasí)
-
-**DŮLEŽITÉ:** HACS automaticky nenainstaluje Lovelace card pro integrace. Musíte ji přidat manuálně.
-
-#### Metoda 1: Stažení přes GitHub (doporučeno)
-
-1. Stáhněte soubor [pocasimeteo-card.js](https://raw.githubusercontent.com/glaverCZ/pocasimeteo/main/custom_components/pocasimeteo/www/pocasimeteo-card.js)
-2. Vytvořte složku `/config/www/community/pocasimeteo-card/` (pokud neexistuje)
-3. Zkopírujte `pocasimeteo-card.js` do této složky
-4. Přidejte resource v Home Assistant:
-   - Otevřete **Nastavení** → **Dashboardy** → **Resources** (vpravo nahoře tři tečky)
-   - Klikněte na **+ PŘIDAT RESOURCE**
-   - URL: `/hacsfiles/pocasimeteo-card/pocasimeteo-card.js`
-   - Typ zdroje: **JavaScript Module**
-   - Klikněte na **CREATE**
-5. **Smažte browser cache** (Ctrl+F5 nebo Cmd+Shift+R)
-
-#### Metoda 2: Z lokální instalace HACS
-
-Pokud jste nainstalovali integraci přes HACS, card už je ve složce, stačí ji jen zaregistrovat:
-
-1. Card je již stažena v `/config/custom_components/pocasimeteo/www/pocasimeteo-card.js`
-2. Zkopírujte ji do `/config/www/community/pocasimeteo-card/pocasimeteo-card.js`
-3. Přidejte resource stejně jako v Metodě 1 (body 4-5)
+> **Poznámka:** Lovelace card se automaticky načte při přidání integrace. Není potřeba manuálně přidávat resource ani kopírovat soubory.
 
 ### Manuální instalace (bez HACS)
 
 1. Zkopírujte složku `custom_components/pocasimeteo` do vaší `config/custom_components/` složky v Home Assistant
-2. Zkopírujte `custom_components/pocasimeteo/www/pocasimeteo-card.js` do `/config/www/community/pocasimeteo-card/pocasimeteo-card.js`
-3. Přidejte resource podle instrukcí výše (Metoda 1, body 4-5)
-4. Restartujte Home Assistant
+2. **Restartujte Home Assistant**
+3. Přidejte integraci přes UI (viz bod 7 výše)
+4. **Smažte browser cache** (Ctrl+F5 nebo Cmd+Shift+R)
 
 ## Konfigurace
 
