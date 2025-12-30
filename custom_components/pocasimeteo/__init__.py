@@ -23,34 +23,49 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up PočasíMeteo from a config entry."""
     _LOGGER.info("▶ Setting up PočasíMeteo integration")
 
-    # Register static path for Lovelace card
-    # Modern approach (HA 2024+): serve files directly from integration instead of copying
+    # Install Lovelace card to www/community/pocasimeteo-card/
+    # HACS doesn't copy www/ folder from integrations, so we download it from GitHub
     try:
-        from homeassistant.components.http import StaticPathConfig
+        import aiohttp
+        import shutil
 
-        # Path to card in integration
-        card_dir = Path(__file__).parent / "www"
+        dest_dir = Path(hass.config.path("www/community/pocasimeteo-card"))
+        dest_path = dest_dir / "pocasimeteo-card.js"
 
-        _LOGGER.info("→ Registering static path for card: %s", card_dir)
+        # Create directory if it doesn't exist
+        dest_dir.mkdir(parents=True, exist_ok=True)
 
-        # Register path /local/pocasimeteo/ → custom_components/pocasimeteo/www/
-        await hass.http.async_register_static_paths([
-            StaticPathConfig(
-                url_path="/local/pocasimeteo",
-                path=str(card_dir),
-                cache_headers=False
-            )
-        ])
+        # Try to find card locally first (for manual installations)
+        local_card = Path(__file__).parent / "www" / "pocasimeteo-card.js"
 
-        # Load card automatically
+        if local_card.exists():
+            _LOGGER.info("→ Found card locally, copying...")
+            shutil.copy2(local_card, dest_path)
+            _LOGGER.info("✓ Card copied from local installation")
+        elif not dest_path.exists():
+            # Download card from GitHub
+            _LOGGER.info("→ Card not found locally, downloading from GitHub...")
+            card_url = "https://raw.githubusercontent.com/glaverCZ/pocasimeteo/main/custom_components/pocasimeteo/www/pocasimeteo-card.js"
+
+            async with aiohttp.ClientSession() as session:
+                async with session.get(card_url) as response:
+                    if response.status == 200:
+                        content = await response.read()
+                        dest_path.write_bytes(content)
+                        _LOGGER.info("✓ Card downloaded from GitHub (%d bytes)", len(content))
+                    else:
+                        _LOGGER.error("✗ Failed to download card: HTTP %d", response.status)
+        else:
+            _LOGGER.info("✓ Card already exists at %s", dest_path)
+
+        # Register card with frontend
         hass.components.frontend.add_extra_js_url(
-            hass, "/local/pocasimeteo/pocasimeteo-card.js"
+            hass, "/hacsfiles/pocasimeteo-card/pocasimeteo-card.js"
         )
-
-        _LOGGER.info("✓ PočasíMeteo: Card registered at /local/pocasimeteo/pocasimeteo-card.js")
+        _LOGGER.info("✓ PočasíMeteo: Card registered at /hacsfiles/pocasimeteo-card/pocasimeteo-card.js")
 
     except Exception as err:
-        _LOGGER.error("✗ Failed to register card: %s", err, exc_info=True)
+        _LOGGER.error("✗ Failed to setup card: %s", err, exc_info=True)
 
     try:
         _LOGGER.info("→ Creating coordinator")
