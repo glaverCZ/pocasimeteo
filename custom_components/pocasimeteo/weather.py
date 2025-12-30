@@ -273,10 +273,16 @@ class PocasimeteoWeather(CoordinatorEntity, WeatherEntity):
     async def async_forecast_hourly(self) -> list[Forecast] | None:
         """Return the hourly forecast."""
         if not self.coordinator.data:
+            _LOGGER.warning(f"[{self._model}] No coordinator data available")
             return None
 
         model_data = self.coordinator.data.get("models", {}).get(self._model, {})
+        if not model_data:
+            _LOGGER.warning(f"[{self._model}] No model data in coordinator for this model")
+            return None
+
         hourly_data = model_data.get("data", [])
+        _LOGGER.debug(f"[{self._model}] async_forecast_hourly: found {len(hourly_data)} hourly items")
 
         forecasts = []
         for item in hourly_data[:48]:  # 48 hodin dopředu
@@ -294,18 +300,25 @@ class PocasimeteoWeather(CoordinatorEntity, WeatherEntity):
                 }
                 forecasts.append(forecast)
             except (KeyError, ValueError) as err:
-                _LOGGER.warning("Error parsing forecast data: %s", err)
+                _LOGGER.warning(f"[{self._model}] Error parsing forecast data: %s", err)
                 continue
 
+        _LOGGER.debug(f"[{self._model}] async_forecast_hourly: returning {len(forecasts)} forecasts")
         return forecasts
 
     async def async_forecast_daily(self) -> list[Forecast] | None:
         """Return the daily forecast."""
         if not self.coordinator.data:
+            _LOGGER.warning(f"[{self._model}] No coordinator data available")
             return None
 
         model_data = self.coordinator.data.get("models", {}).get(self._model, {})
+        if not model_data:
+            _LOGGER.warning(f"[{self._model}] No model data in coordinator for this model")
+            return None
+
         daily_data = model_data.get("data_dne", [])
+        _LOGGER.debug(f"[{self._model}] async_forecast_daily: found {len(daily_data)} daily items")
 
         forecasts = []
         for item in daily_data[:7]:  # 7 dní dopředu
@@ -322,9 +335,10 @@ class PocasimeteoWeather(CoordinatorEntity, WeatherEntity):
                 }
                 forecasts.append(forecast)
             except (KeyError, ValueError) as err:
-                _LOGGER.warning("Error parsing daily forecast: %s", err)
+                _LOGGER.warning(f"[{self._model}] Error parsing daily forecast: %s", err)
                 continue
 
+        _LOGGER.debug(f"[{self._model}] async_forecast_daily: returning {len(forecasts)} forecasts")
         return forecasts
 
     @property

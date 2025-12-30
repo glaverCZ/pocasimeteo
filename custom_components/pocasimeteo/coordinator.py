@@ -1,5 +1,6 @@
 """Data update coordinator for PočasíMeteo."""
 import asyncio
+import copy
 import logging
 import random
 from datetime import datetime, timedelta
@@ -410,15 +411,31 @@ class PocasimeteoDataUpdateCoordinator(DataUpdateCoordinator):
                     if "MASTER" not in processed_data["models"]:
                         raise UpdateFailed("Failed to fetch MASTER model data")
 
+                    # Debug: Log které modely byly úspěšně fetchnuty z API
+                    _LOGGER.info(f"Models fetched from API: {list(processed_data['models'].keys())}")
+
                     # Pokud nemáme data pro ostatní modely, použij MASTER data jako fallback
                     # aby entity mohly existovat
-                    master_data_copy = processed_data["models"].get("MASTER", {})
+                    master_data = processed_data["models"].get("MASTER", {})
                     for model in available_model_names:
-                        if model not in processed_data["models"] and master_data_copy:
-                            _LOGGER.debug(f"Using MASTER data as fallback for {model}")
-                            processed_data["models"][model] = master_data_copy.copy()
+                        if model not in processed_data["models"]:
+                            if master_data:
+                                _LOGGER.warning(f"Model {model} not available from API - using MASTER as fallback")
+                                # DŮLEŽITÉ: Použij deepcopy, aby každý model měl vlastní kopii dat
+                                # Shallow copy by způsobila, že všechny modely sdílejí stejné list objekty
+                                processed_data["models"][model] = copy.deepcopy(master_data)
+                            else:
+                                _LOGGER.error(f"Model {model} not available and MASTER is also missing")
 
                     _LOGGER.info(f"Successfully fetched data for {len(processed_data['models'])} models")
+
+                    # Debug: Log které modely mají data a kolik
+                    for model_name in available_model_names:
+                        model_data = processed_data["models"].get(model_name, {})
+                        hourly_count = len(model_data.get("data", []))
+                        daily_count = len(model_data.get("data_dne", []))
+                        last_update = model_data.get("last_update", "N/A")
+                        _LOGGER.info(f"  → {model_name}: hourly={hourly_count}, daily={daily_count}, last_update={last_update}")
 
                     # Kontrola zastaralosti dat
                     _LOGGER.info("→ KROK 3: Checking data staleness")
