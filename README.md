@@ -13,13 +13,13 @@ Home Assistant integrace pro meteorologická data z [PočasíMeteo.cz](https://w
   - Např.: praha-6-ruzyne, brno, ostrava, plzen, liberec, olomouc, atd.
 
 - **7 meteorologických modelů:**
-  - MASTER (Ensemble)
-  - ALADIN
-  - ICONDE (ICON)
-  - ICONEU (COSMO)
-  - YRno
-  - GFS
-  - WRF
+  - MASTER (Ensemble - kombinace všech modelů)
+  - ALADIN (ČHMÚ model pro Česko)
+  - ICON-EU (Evropský model)
+  - ICON-DE (Německý model s vysokým rozlišením)
+  - YR.no (Norský model)
+  - GFS (Americký globální model)
+  - WRF (Model s vysokým rozlišením)
 
 - **Předpověď:**
   - Hodinová předpověď (48 hodin)
